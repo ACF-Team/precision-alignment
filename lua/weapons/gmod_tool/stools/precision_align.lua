@@ -5,6 +5,12 @@ TOOL.Name			= "#Tool.precision_align.name"
 TOOL.Command		= nil
 TOOL.ConfigName		= ""
 
+TOOL.Information	= {
+	{ name = "left" },
+	{ name = "right" },
+	{ name = "reload" }
+}
+
 local PA = "precision_align"
 local PA_ = PA .. "_"
 
@@ -107,6 +113,9 @@ if CLIENT then
 
 	language.Add("Tool.precision_align.name", "Precision Alignment")
 	language.Add("Tool.precision_align.desc", "Precision prop alignment tool")
+	language.Add("Tool.precision_align.left", "Place constructs")
+	language.Add("Tool.precision_align.right", "Select entity")
+	language.Add("Tool.precision_align.reload", "Open/close manipulation window")
 	language.Add("Tool.precision_align.0", "Primary: Place constructs, Secondary: Select entity, Reload: Open/close manipulation window")
 	language.Add("Tool.precision_align.1", "Click again to place line end point, right click to cancel")
 
@@ -420,7 +429,6 @@ surface.CreateFont("PAToolScreen_ToolType", {font = "Verdana", size = 70, weight
 -- surface.CreateFont( "TabLarge",{ 29, 400, true, false, "PAToolScreen_ToolDesc"} )
 surface.CreateFont("PAToolScreen_ToolDesc", {font = "Verdana", size = 29, weight = 400, antialias = true, additive = false})
 
--- local ToolType_Current = GetConVar("precision_align_tooltype"):GetInt()
 local ToolTypeLookup = {
 	[1] = {"Point", "Hitpos"},
 	[2] = {"Point", "Coordinate Centre"},
