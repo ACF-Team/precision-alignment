@@ -56,7 +56,6 @@ TOOL.ClientConVar =
 	["axis_nocollide"]		= "0",
 
 	["ballsocket_forcelimit"]	= "0",
-	["ballsocket_torquelimit"]	= "0",
 	["ballsocket_nocollide"]	= "0",
 
 	["ballsocket_adv_forcelimit"]	= "0",
@@ -79,6 +78,9 @@ TOOL.ClientConVar =
 	["elastic_material"]	= "cable/rope",
 	["elastic_width"]		= "1",
 	["elastic_stretchonly"]	= "0",
+	["elastic_color_r"]		= "255",
+	["elastic_color_g"]		= "255",
+	["elastic_color_b"]		= "255",
 
 	["rope_forcelimit"]		= "0",
 	["rope_addlength"]		= "0",
@@ -86,8 +88,15 @@ TOOL.ClientConVar =
 	["rope_material"]		= "cable/rope",
 	["rope_rigid"]			= "0",
 	["rope_setlength"]		= "0",
+	["rope_color_r"]		= "255",
+	["rope_color_g"]		= "255",
+	["rope_color_b"]		= "255",
 
 	["slider_width"]		= "1",
+	["slider_material"]		= "cable/rope",
+	["slider_color_r"]		= "255",
+	["slider_color_g"]		= "255",
+	["slider_color_b"]		= "255",
 
 	["wire_hydraulic_width"]	= "1",
 	["wire_hydraulic_material"]	= "cable/rope",

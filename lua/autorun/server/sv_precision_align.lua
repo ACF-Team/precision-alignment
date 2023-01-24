@@ -786,10 +786,9 @@ local function precision_align_constraint_func( len, ply )
 		const = constraint.Axis( Ent1, Ent2, 0, 0, LPos1, LPos2, forcelimit, torquelimit, friction, nocollide, axis )
 	elseif constraint_type == "Ballsocket" then
 		local forcelimit = ply:GetInfoNum( PA_ .. "ballsocket_forcelimit", 0 )
-		local torquelimit = ply:GetInfoNum( PA_ .. "ballsocket_torquelimit", 0 )
 		local nocollide = ply:GetInfoNum( PA_ .. "ballsocket_nocollide", 0 )
 
-		const = constraint.Ballsocket( Ent2, Ent1, 0, 0, LPos1, forcelimit, torquelimit, nocollide )
+		const = constraint.Ballsocket( Ent2, Ent1, 0, 0, LPos1, forcelimit, 0, nocollide )
 
 	elseif constraint_type == "Ballsocket Advanced" then
 		local forcelimit = ply:GetInfoNum( PA_ .. "ballsocket_adv_forcelimit", 0 )
@@ -815,14 +814,20 @@ local function precision_align_constraint_func( len, ply )
 		local material = ply:GetInfo( PA_ .. "elastic_material", "cable/rope" )
 		local width = ply:GetInfoNum( PA_ .. "elastic_width", 1 )
 		local stretchonly = ply:GetInfoNum( PA_ .. "elastic_stretchonly", 0 )
+		local colorR = ply:GetInfoNum( PA_ .. "elastic_color_r", 255 )
+		local colorG = ply:GetInfoNum( PA_ .. "elastic_color_g", 255 )
+		local colorB = ply:GetInfoNum( PA_ .. "elastic_color_b", 255 )
 
-		const = constraint.Elastic( Ent1, Ent2, 0, 0, LPos1, LPos2, constant, damping, rdamping, material, width, stretchonly )
+		const = constraint.Elastic( Ent1, Ent2, 0, 0, LPos1, LPos2, constant, damping, rdamping, material, width, stretchonly, Color( colorR, colorG, colorB, 255 ) )
 
 	elseif constraint_type == "Rope" then
 		local forcelimit = ply:GetInfoNum( PA_ .. "rope_forcelimit", 0 )
 		local width = ply:GetInfoNum( PA_ .. "rope_width", 1 )
 		local material = ply:GetInfo( PA_ .. "rope_material", "cable/rope" )
 		local rigid = ply:GetInfoNum( PA_ .. "rope_rigid", 0 ) ~= 0
+		local colorR = ply:GetInfoNum( PA_ .. "rope_color_r", 255 )
+		local colorG = ply:GetInfoNum( PA_ .. "rope_color_g", 255 )
+		local colorB = ply:GetInfoNum( PA_ .. "rope_color_b", 255 )
 
 		local length = ply:GetInfoNum( PA_ .. "rope_setlength", 0 )
 		local addlength = 0
@@ -831,12 +836,16 @@ local function precision_align_constraint_func( len, ply )
 			length = ( Ent1:LocalToWorld(LPos1) - Ent2:LocalToWorld(LPos2) ):Length()
 		end
 
-		const = constraint.Rope( Ent1, Ent2, 0, 0, LPos1, LPos2, length, addlength, forcelimit, width, material, rigid )
+		const = constraint.Rope( Ent1, Ent2, 0, 0, LPos1, LPos2, length, addlength, forcelimit, width, material, rigid, Color( colorR, colorG, colorB, 255 ) )
 
 	elseif constraint_type == "Slider" then
 		local width = ply:GetInfoNum( PA_ .. "slider_width", 0 )
+		local material = ply:GetInfoNum( PA_ .. "slider_material", "cable/cable" )
+		local colorR = ply:GetInfoNum( PA_ .. "slider_color_r", 255 )
+		local colorG = ply:GetInfoNum( PA_ .. "slider_color_g", 255 )
+		local colorB = ply:GetInfoNum( PA_ .. "slider_color_b", 255 )
 
-		const = constraint.Slider( Ent1, Ent2, 0, 0, LPos1, LPos2, width )
+		const = constraint.Slider( Ent1, Ent2, 0, 0, LPos1, LPos2, width, material, Color( colorR, colorG, colorB, 255 ) )
 
 	elseif constraint_type == "Wire Hydraulic" then
 		local controller = Entity( vars )

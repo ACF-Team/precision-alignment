@@ -3271,7 +3271,7 @@ function CONSTRAINTS_AXIS_TAB:Init()
 
 	self.checkbox_nocollide = vgui.Create( "DCheckBoxLabel", self )
 		self.checkbox_nocollide:SetPos(180, 220)
-		self.checkbox_nocollide:SetText( "Nocollide" )
+		self.checkbox_nocollide:SetText( "No Collide" )
 		self.checkbox_nocollide:SetSize(100,30)
 		self.checkbox_nocollide:SetConVar( PA_ .. "axis_nocollide" )
 
@@ -3310,8 +3310,7 @@ function CONSTRAINTS_BALLSOCKET_TAB:Init()
 			CVars =
 			{
 				[0] = PA_ .. "ballsocket_forcelimit",
-				[1] = PA_ .. "ballsocket_torquelimit",
-				[2] = PA_ .. "ballsocket_nocollide"
+				[1] = PA_ .. "ballsocket_nocollide"
 			}
 		}
 	)
@@ -3324,15 +3323,9 @@ function CONSTRAINTS_BALLSOCKET_TAB:Init()
 		self.slider_forcelimit:SetText( "Force Limit" )
 		self.slider_forcelimit:SetConVar( PA_ .. "ballsocket_forcelimit" )
 
-	self.slider_torquelimit = vgui.Create( "PA_Constraint_Slider", self )
-		self.slider_torquelimit:SetWide(300)
-		self.slider_torquelimit:SetPos(50, 110)
-		self.slider_torquelimit:SetText( "Torque Limit" )
-		self.slider_torquelimit:SetConVar( PA_ .. "ballsocket_torquelimit" )
-
 	self.checkbox_nocollide = vgui.Create( "DCheckBoxLabel", self )
-		self.checkbox_nocollide:SetPos(50, 170)
-		self.checkbox_nocollide:SetText( "Nocollide" )
+		self.checkbox_nocollide:SetPos(50, 110)
+		self.checkbox_nocollide:SetText( "No Collide" )
 		self.checkbox_nocollide:SetSize(100,30)
 		self.checkbox_nocollide:SetConVar( PA_ .. "ballsocket_nocollide" )
 
@@ -3474,7 +3467,7 @@ function CONSTRAINTS_BALLSOCKET_ADV_TAB:Init()
 
 	self.checkbox_nocollide = vgui.Create( "DCheckBoxLabel", self )
 		self.checkbox_nocollide:SetPos(50, 363)
-		self.checkbox_nocollide:SetText( "Nocollide" )
+		self.checkbox_nocollide:SetText( "No Collide" )
 		self.checkbox_nocollide:SetSize(100,30)
 		self.checkbox_nocollide:SetConVar( PA_ .. "ballsocket_adv_nocollide" )
 
@@ -3506,7 +3499,10 @@ function CONSTRAINTS_ELASTIC_TAB:Init()
 				[2] = PA_ .. "elastic_rdamping",
 				[3] = PA_ .. "elastic_material",
 				[4] = PA_ .. "elastic_width",
-				[5] = PA_ .. "elastic_stretchonly"
+				[5] = PA_ .. "elastic_stretchonly",
+				[6] = PA_ .. "elastic_color_r",
+				[7] = PA_ .. "elastic_color_g",
+				[8] = PA_ .. "elastic_color_b"
 			}
 		}
 	)
@@ -3555,6 +3551,14 @@ function CONSTRAINTS_ELASTIC_TAB:Init()
 		self.matselect:SetWide(250)
 		self.matselect:SetConVar( PA_ .. "elastic_material" )
 
+	self.colselect = vgui.Create( "DColorMixer", self )
+		self.colselect:SetPos( 250, 160 )
+		self.colselect:SetAlphaBar( false )
+		self.colselect:SetLabel( "Elastic Color" )
+		self.colselect:SetConVarR( PA_ .. "elastic_color_r" )
+		self.colselect:SetConVarG( PA_ .. "elastic_color_g" )
+		self.colselect:SetConVarB( PA_ .. "elastic_color_b" )
+
 	self.Constraint_Func = function()
 		return 0
 	end
@@ -3585,7 +3589,10 @@ function CONSTRAINTS_ROPE_TAB:Init()
 				[2] = PA_ .. "rope_width",
 				[3] = PA_ .. "rope_material",
 				[4] = PA_ .. "rope_rigid",
-				[5] = PA_ .. "rope_setlength"
+				[5] = PA_ .. "rope_setlength",
+				[6] = PA_ .. "rope_color_r",
+				[7] = PA_ .. "rope_color_g",
+				[8] = PA_ .. "rope_color_b"
 			}
 		}
 	)
@@ -3630,10 +3637,17 @@ function CONSTRAINTS_ROPE_TAB:Init()
 		self.checkbox_rigid:SetConVar( PA_ .. "rope_rigid" )
 
 	self.matselect = vgui.Create( "RopeMaterial", self )
-		-- self.matselect:SetPos(50, 220)
 		self.matselect:SetPos(250, 20)
 		self.matselect:SetWide(250)
 		self.matselect:SetConVar( PA_ .. "rope_material" )
+
+	self.colselect = vgui.Create( "DColorMixer", self )
+		self.colselect:SetPos( 250, 160 )
+		self.colselect:SetAlphaBar( false )
+		self.colselect:SetLabel( "Rope Color" )
+		self.colselect:SetConVarR( PA_ .. "rope_color_r" )
+		self.colselect:SetConVarG( PA_ .. "rope_color_g" )
+		self.colselect:SetConVarB( PA_ .. "rope_color_b" )
 
 	self.Constraint_Func = function()
 		return 0
@@ -3651,12 +3665,45 @@ function CONSTRAINTS_SLIDER_TAB:Init()
 	self.Description =	"Create a slider constraint between Pos 1 and Pos 2\n\n" ..
 						"The direction of the slider will always be between Pos 1 and Pos 2"
 
+	self.combobox = self:AddComboBox(
+		{
+			Label = "#Presets",
+			MenuButton = 1,
+			Folder = PA,
+			Options = {},
+			CVars =
+			{
+				[0] = PA_ .. "slider_width",
+				[1] = PA_ .. "slider_material",
+				[2] = PA_ .. "slider_color_r",
+				[3] = PA_ .. "slider_color_g",
+				[4] = PA_ .. "slider_color_b"
+			}
+		}
+	)
+		self.combobox:SetPos(25, 20)
+		self.combobox:SetWide(225)
+
 	self.slider_width = vgui.Create( "PA_Constraint_Slider", self )
-		self.slider_width:SetWide(300)
-		self.slider_width:SetPos(50, 20)
+		self.slider_width.Label:SetSize( 75 )
+		self.slider_width:SetWide( 225 )
+		self.slider_width:SetPos( 25, 60 )
 		self.slider_width:SetMax(20)
 		self.slider_width:SetText( "Width" )
 		self.slider_width:SetConVar( PA_ .. "slider_width" )
+
+	self.matselect = vgui.Create( "RopeMaterial", self )
+		self.matselect:SetPos(250, 20)
+		self.matselect:SetWide(250)
+		self.matselect:SetConVar( PA_ .. "slider_material" )
+
+	self.colselect = vgui.Create( "DColorMixer", self )
+		self.colselect:SetPos( 250, 160 )
+		self.colselect:SetAlphaBar( false )
+		self.colselect:SetLabel( "Slider Color" )
+		self.colselect:SetConVarR( PA_ .. "slider_color_r" )
+		self.colselect:SetConVarG( PA_ .. "slider_color_g" )
+		self.colselect:SetConVarB( PA_ .. "slider_color_b" )
 
 	self.Constraint_Func = function()
 		return 0
@@ -3674,12 +3721,28 @@ function CONSTRAINTS_WIRE_HYDRAULIC_TAB:Init()
 	self.Description =	"This is for editing wire hydraulic constraints that have already been created\n\n" ..
 						"Select the hydraulic controller with right click, then set the constraint according to Pos 1 and Pos 2 to overwrite the existing hydraulic\n\n" ..
 						"For technical reasons there is no 'fixed' option, but this can be done easily by creating a slider constraint manually\n\n" ..
-						"As a result, it is adviseable not to use this on fixed hydraulics without first removing the existing hydraulic slider"
+						"As a result, it is advisable not to use this on fixed hydraulics without first removing the existing hydraulic slider"
+
+	self.combobox = self:AddComboBox(
+		{
+			Label = "#Presets",
+			MenuButton = 1,
+			Folder = PA,
+			Options = {},
+			CVars =
+			{
+				[0] = PA_ .. "wire_hydraulic_width",
+				[1] = PA_ .. "wire_hydraulic_material"
+			}
+		}
+	)
+		self.combobox:SetPos( 25, 20 )
+		self.combobox:SetWide( 225 )
 
 	self.slider_width = vgui.Create( "PA_Constraint_Slider", self )
 		self.slider_width.Label:SetSize( 75 )
 		self.slider_width:SetWide(225)
-		self.slider_width:SetPos(25, 20)
+		self.slider_width:SetPos(25, 60)
 		self.slider_width:SetMax(20)
 		self.slider_width:SetText( "Width" )
 		self.slider_width:SetConVar( PA_ .. "wire_hydraulic_width" )
