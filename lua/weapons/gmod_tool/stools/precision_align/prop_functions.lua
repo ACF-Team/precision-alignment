@@ -24,7 +24,7 @@ end
 
 -- Set view in direction of world position vector v
 PA_funcs.set_playerview = function( v )
-	if !v then return false end
+	if not v then return false end
 	local ply = LocalPlayer()
 	local pos = ply:GetShootPos()
 	local Ang = (v - pos):Angle()
@@ -34,12 +34,12 @@ end
 
 -- Sends data to server to move entity - ent1/ent2 are the entities the points are attached to
 PA_funcs.move_entity = function( vec1, vec2, activeent )
-	if !IsValid(activeent) then
+	if not IsValid(activeent) then
 		Warning("No valid entity selected")
 		return false
 	end
 
-	if !vec1 or !vec2 then
+	if not vec1 or not vec2 then
 		Warning("Incomplete move data")
 		return false
 	end
@@ -70,12 +70,12 @@ end
 
 -- Sends data to server to rotate entity - vector is pivot point
 PA_funcs.rotate_entity = function( ang, vec, relative, activeent )
-	if !IsValid(activeent) then
+	if not IsValid(activeent) then
 		Warning("No valid entity selected")
 		return false
 	end
 
-	if !ang then
+	if not ang then
 		Warning("Incomplete rotation data")
 		return false
 	end
@@ -128,7 +128,7 @@ PA_funcs.rotate_entity = function( ang, vec, relative, activeent )
 end
 
 PA_funcs.construct_exists = function( construct_type, ID )
-	if !construct_type or !ID then return false end
+	if not construct_type or not ID then return false end
 
 	if construct_type == "Point" then
 		if precision_align_points[ID].origin then
@@ -156,7 +156,7 @@ end
 PA_funcs.point_global = function( point )
 	local point_temp = table.Copy( precision_align_points[point] )
 
-	if !point_temp.origin then
+	if not point_temp.origin then
 		return false
 	end
 
@@ -176,7 +176,7 @@ end
 PA_funcs.point_local = function( point )
 	local point_temp = table.Copy( precision_align_points[point] )
 
-	if !point_temp.origin then
+	if not point_temp.origin then
 		return false
 	end
 
@@ -194,7 +194,7 @@ PA_funcs.point_local = function( point )
 end
 
 PA_funcs.set_point = function( point, origin )
-	if !origin then
+	if not origin then
 		Warning("Incomplete point data")
 		return false
 	end
@@ -226,14 +226,14 @@ PA_funcs.delete_points = function()
 end
 
 PA_funcs.attach_point = function( point, ent )
-	if !precision_align_points[point].origin then
+	if not precision_align_points[point].origin then
 		Warning("Point must be defined before attaching")
 		return false
 	end
 
 	local attached_ent = precision_align_points[point].entity
 
-	if !IsValid(ent) then
+	if not IsValid(ent) then
 		if attached_ent then
 			precision_align_points[point].origin = attached_ent:LocalToWorld(precision_align_points[point].origin)
 			precision_align_points[point].entity = nil
@@ -289,7 +289,7 @@ end
 PA_funcs.line_global = function( line )
 	local line_temp = table.Copy( precision_align_lines[line] )
 
-	if !line_temp.startpoint or !line_temp.endpoint then
+	if not line_temp.startpoint or not line_temp.endpoint then
 		return false
 	end
 
@@ -310,7 +310,7 @@ end
 PA_funcs.line_local = function( line )
 	local line_temp = table.Copy( precision_align_lines[line] )
 
-	if !line_temp.startpoint or !line_temp.endpoint then
+	if not line_temp.startpoint or not line_temp.endpoint then
 		return false
 	end
 
@@ -330,7 +330,7 @@ end
 
 PA_funcs.set_line = function( line, startpoint, endpoint, direction, length )
 	local ent = precision_align_lines[line].entity
-	if !IsValid(ent) then
+	if not IsValid(ent) then
 		ent = nil
 	end
 
@@ -342,7 +342,7 @@ PA_funcs.set_line = function( line, startpoint, endpoint, direction, length )
 			precision_align_lines[line].startpoint = startpoint
 		end
 
-		if !endpoint and !direction then
+		if not endpoint and not direction then
 			Message("Line [" .. tostring(line) .. "] startpoint set at " .. tostring(startpoint))
 			return true
 		end
@@ -363,14 +363,14 @@ PA_funcs.set_line = function( line, startpoint, endpoint, direction, length )
 		return true
 	end
 
-	if !precision_align_lines[line].startpoint then
+	if not precision_align_lines[line].startpoint then
 		Warning("Line not defined")
 		return false
 	end
 
 	if direction then
 		local len
-		if !length then
+		if not length then
 			--Check to see whether line already exists, if so use that length
 			if PA_funcs.construct_exists( "Line", line ) then
 				len = startpoint_old:Distance( precision_align_lines[line].endpoint )
@@ -416,14 +416,14 @@ PA_funcs.delete_lines = function()
 end
 
 PA_funcs.attach_line = function( line, ent )
-	if !precision_align_lines[line].startpoint or !precision_align_lines[line].endpoint then
+	if not precision_align_lines[line].startpoint or not precision_align_lines[line].endpoint then
 		Warning("Line must be defined before attaching")
 		return false
 	end
 
 	local attached_ent = precision_align_lines[line].entity
 
-	if !IsValid(ent) then
+	if not IsValid(ent) then
 		if attached_ent then
 			precision_align_lines[line].startpoint = attached_ent:LocalToWorld(precision_align_lines[line].startpoint)
 			precision_align_lines[line].endpoint = attached_ent:LocalToWorld(precision_align_lines[line].endpoint)
@@ -480,7 +480,7 @@ end
 PA_funcs.plane_global = function( plane )
 	local plane_temp = table.Copy(precision_align_planes[plane])
 
-	if !plane_temp.origin or !plane_temp.normal then
+	if not plane_temp.origin or not plane_temp.normal then
 		return false
 	end
 
@@ -501,7 +501,7 @@ end
 PA_funcs.plane_local = function( plane )
 	local plane_temp = table.Copy(precision_align_planes[plane])
 
-	if !plane_temp.origin or !plane_temp.normal then
+	if not plane_temp.origin or not plane_temp.normal then
 		return false
 	end
 
@@ -530,7 +530,7 @@ PA_funcs.set_plane = function( plane, origin, normal )
 		end
 	end
 
-	if !precision_align_planes[plane].origin then
+	if not precision_align_planes[plane].origin then
 		Warning("Plane not defined")
 		return false
 	end
@@ -569,14 +569,14 @@ PA_funcs.delete_planes = function()
 end
 
 PA_funcs.attach_plane = function( plane, ent )
-	if !precision_align_planes[plane].origin or !precision_align_planes[plane].normal then
+	if not precision_align_planes[plane].origin or not precision_align_planes[plane].normal then
 		Warning("Plane must be defined before attaching")
 		return false
 	end
 
 	local attached_ent = precision_align_planes[plane].entity
 
-	if !IsValid(ent) then
+	if not IsValid(ent) then
 		if attached_ent then
 			precision_align_planes[plane].origin = attached_ent:LocalToWorld(precision_align_planes[plane].origin)
 			precision_align_planes[plane].normal = ( attached_ent:LocalToWorld(precision_align_planes[plane].normal) - attached_ent:GetPos() ):GetNormal()
@@ -664,7 +664,7 @@ local function solve_point_2line_intersection( line1, line2 )
 
 	-- solve simultaneous
 	local length1, length2 = solve_simultaneous_2( a1, b1, c1, a2, b2, c2 )
-	if !length1 or !length2 then return false end
+	if not length1 or not length2 then return false end
 
 	-- local dir1, dir2 = A:GetNormal(), B:GetNormal()
 
@@ -742,7 +742,7 @@ PA_funcs.point_3plane_intersection = function( planeID1, planeID2, planeID3 )
 	end
 
 	local line = PA_funcs.line_2plane_intersection( planeID1, planeID2 )
-	if !line then return false end
+	if not line then return false end
 
 	-- Calculate line/plane intercept
 	local length = plane3.normal:Dot(plane3.origin - line.startpoint) / plane3.normal:Dot(line.direction)
@@ -880,7 +880,7 @@ PA_funcs.rotate_2lines_parallel = function( pivot, lineID1, lineID2, activeent )
 	local line1 = PA_funcs.line_global( lineID1 )
 	local line2 = PA_funcs.line_global( lineID2 )
 
-	if !pivot then
+	if not pivot then
 		pivot = line1.startpoint
 	end
 
@@ -905,7 +905,7 @@ PA_funcs.rotate_2planes_parallel = function( pivot, planeID1, planeID2, activeen
 	local plane1 = PA_funcs.plane_global( planeID1 )
 	local plane2 = PA_funcs.plane_global( planeID2 )
 
-	if !pivot then
+	if not pivot then
 		pivot = plane1.origin
 	end
 
@@ -1042,7 +1042,7 @@ PA_funcs.rotate_line_plane_parallel = function( pivot, axis, lineID, planeID, ac
 	ang:RotateAroundAxis( axisdir, Ang )
 
 	-- Use axis as pivot by default
-	if !pivot and axis then
+	if not pivot and axis then
 		pivot = axis.startpoint
 	end
 
@@ -1091,7 +1091,7 @@ end
 
 
 	-- -- Use axis as pivot by default
-	-- if !pivot and axis then
+	-- if not pivot and axis then
 		-- pivot = axis.startpoint
 	-- end
 
