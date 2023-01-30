@@ -657,7 +657,7 @@ local function precision_align_mirror_func( ply, cmd, args )
 	local pos = ent:GetPos()
 	local ang = ent:GetAngles()
 	-- Mass centre seems to be most reliable way of finding a point on the plane of symmetry
-	-- local v = ent:LocalToWorld(ent:GetPhysicsObject():GetMassCenter())
+	local v = ent:LocalToWorld(ent:GetPhysicsObject():GetMassCenter())
 
 	-- Stack before mirroring
 	-- local ent2
@@ -683,9 +683,9 @@ local function precision_align_mirror_func( ply, cmd, args )
 	-- Match left part of string
 	if not exceptionang then
 		local PA_mirror_exceptions = list.Get( "PA_mirror_exceptions" )
-		for k, v in pairs( PA_mirror_exceptions ) do
+		for k, a in pairs( PA_mirror_exceptions ) do
 			if string.match( model, "^" .. k ) then
-				exceptionang = v
+				exceptionang = a
 				break
 			end
 		end

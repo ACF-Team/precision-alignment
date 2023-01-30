@@ -1989,64 +1989,66 @@ local function precision_align_draw( w, h)
 	end
 
 	-- Planes
-	for k, v in ipairs (precision_align_planes) do
+	for k, v in ipairs ( precision_align_planes ) do
 		if v.visible and v.origin and v.normal then
 
-			--Check if plane exists
+			-- Check if plane exists
 			local plane_temp = PA_funcs.plane_global(k)
+			if plane_temp then
 
-			local origin = plane_temp.origin
-			local normal = plane_temp.normal
+				local origin = plane_temp.origin
+				local normal = plane_temp.normal
 
-			-- Draw normal line
-			local line_start = origin:ToScreen()
-			if plane_temp and inview( line_start ) then
+				-- Draw normal line
+				local line_start = origin:ToScreen()
+				if inview( line_start ) then
 
-				local line_end = ( origin + normal * plane_size_normal ):ToScreen()
+					local line_end = ( origin + normal * plane_size_normal ):ToScreen()
 
-				local distance = playerpos:Distance( origin )
-				local text_dist = math.Clamp(text_max / distance, text_min, text_max)
+					local distance = playerpos:Distance( origin )
+					local text_dist = math.Clamp(text_max / distance, text_min, text_max)
 
-				surface.SetDrawColor( planecolour.r, planecolour.g, planecolour.b, planecolour.a )
-				surface.DrawLine( line_start.x, line_start.y, line_end.x, line_end.y )
+					surface.SetDrawColor( planecolour.r, planecolour.g, planecolour.b, planecolour.a )
+					surface.DrawLine( line_start.x, line_start.y, line_end.x, line_end.y )
 
-				-- Draw plane surface
-				local dir1, dir2
-				if IsValid(v.entity) then
-					local up = v.entity:GetUp()
-					if math.abs(normal:Dot(up)) < 0.9 then
-						dir1 = (normal:Cross(up)):GetNormal()
+					-- Draw plane surface
+					local dir1, dir2
+					if IsValid( v.entity ) then
+						local up = v.entity:GetUp()
+						if math.abs( normal:Dot( up ) ) < 0.9 then
+							dir1 = ( normal:Cross( up ) ):GetNormal()
+						else
+							dir1 = ( normal:Cross( v.entity:GetForward() ) ):GetNormal()
+						end
 					else
-						dir1 = (normal:Cross(v.entity:GetForward())):GetNormal()
+						if math.abs( normal.z ) < 0.9 then
+							dir1 = ( normal:Cross( Vector( 0, 0, 1 ) ) ):GetNormal()
+						else
+							dir1 = ( normal:Cross( Vector( 1, 0, 0 ) ) ):GetNormal()
+						end
 					end
-				else
-					if math.abs(normal.z) < 0.9 then
-						dir1 = (normal:Cross(Vector(0,0,1))):GetNormal()
-					else
-						dir1 = (normal:Cross(Vector(1,0,0))):GetNormal()
+
+					dir2 = ( dir1:Cross( normal ) ):GetNormal() * plane_size
+					dir1 = dir1 * plane_size
+
+					local v1 = ( origin + dir1 + dir2 ):ToScreen()
+					local v2 = ( origin - dir1 + dir2 ):ToScreen()
+					local v3 = ( origin - dir1 - dir2 ):ToScreen()
+					local v4 = ( origin + dir1 - dir2 ):ToScreen()
+
+					surface.DrawLine( v1.x, v1.y, v2.x, v2.y )
+					surface.DrawLine( v2.x, v2.y, v3.x, v3.y )
+					surface.DrawLine( v3.x, v3.y, v4.x, v4.y )
+					surface.DrawLine( v4.x, v4.y, v1.x, v1.y )
+
+					draw.DrawText( tostring( k ), "Default", line_start.x - text_dist, line_start.y + text_dist / 1.5, Color( planecolour.r, planecolour.g, planecolour.b, planecolour.a ), 1 )
+					-- Default
+					-- Draw attachment line
+					if draw_attachments and IsValid(v.entity) then
+						local entpos = v.entity:GetPos():ToScreen()
+						surface.SetDrawColor( attachcolourRGB.r, attachcolourRGB.g, attachcolourRGB.b, attachcolourRGB.a )
+						surface.DrawLine( line_start.x, line_start.y, entpos.x, entpos.y )
 					end
-				end
-
-				dir2 = (dir1:Cross(normal)):GetNormal() * plane_size
-				dir1 = dir1 * plane_size
-
-				local v1 = (origin + dir1 + dir2):ToScreen()
-				local v2 = (origin - dir1 + dir2):ToScreen()
-				local v3 = (origin - dir1 - dir2):ToScreen()
-				local v4 = (origin + dir1 - dir2):ToScreen()
-
-				surface.DrawLine( v1.x, v1.y, v2.x, v2.y )
-				surface.DrawLine( v2.x, v2.y, v3.x, v3.y )
-				surface.DrawLine( v3.x, v3.y, v4.x, v4.y )
-				surface.DrawLine( v4.x, v4.y, v1.x, v1.y )
-
-				draw.DrawText( tostring(k), "Default", line_start.x - text_dist, line_start.y + text_dist / 1.5, Color(planecolour.r, planecolour.g, planecolour.b, planecolour.a), 1 )
-				--Default
-				-- Draw attachment line
-				if draw_attachments and IsValid(v.entity) then
-					local entpos = v.entity:GetPos():ToScreen()
-					surface.SetDrawColor( attachcolourRGB.r, attachcolourRGB.g, attachcolourRGB.b, attachcolourRGB.a )
-					surface.DrawLine( line_start.x, line_start.y, entpos.x, entpos.y )
 				end
 			end
 		end
