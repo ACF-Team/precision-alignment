@@ -840,7 +840,7 @@ local function precision_align_constraint_func( len, ply )
 
 	elseif constraint_type == "Slider" then
 		local width = ply:GetInfoNum( PA_ .. "slider_width", 0 )
-		local material = ply:GetInfoNum( PA_ .. "slider_material", "cable/cable" )
+		local material = ply:GetInfo( PA_ .. "slider_material", "cable/cable" )
 		local colorR = ply:GetInfoNum( PA_ .. "slider_color_r", 255 )
 		local colorG = ply:GetInfoNum( PA_ .. "slider_color_g", 255 )
 		local colorB = ply:GetInfoNum( PA_ .. "slider_color_b", 255 )
@@ -868,12 +868,12 @@ local function precision_align_constraint_func( len, ply )
 		if const then
 			controller.MyId = controller:EntIndex()
 			const.MyCrtl = controller:EntIndex()
-			controller:SetConstraint( const )
+			-- controller:SetConstraint( const )
 			controller:DeleteOnRemove( const )
 		end
 
 		if rope then
-			controller:SetRope( rope )
+			-- controller:SetRope( rope )
 			controller:DeleteOnRemove( rope )
 		end
 
