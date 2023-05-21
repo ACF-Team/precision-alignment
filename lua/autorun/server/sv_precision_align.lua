@@ -14,7 +14,7 @@ local action_table = {}
 CreateConVar( PA_ .. "stack_delay", 0.01 )
 
 -- Undo
-local function UndoMove( Undo, ent, pos, ang )
+local function UndoMove( _, ent, pos, ang )
 	if IsValid(ent) then
 		ent:SetPos( pos )
 		ent:SetAngles( ang )
@@ -409,7 +409,7 @@ end
 -- 1,2,3 = Movement vector
 -- 4 = Stack number
 -- 5 = Repeat flag
-local function precision_align_move_func( ply, cmd, args )
+local function precision_align_move_func( ply, _, args )
 	if not ply.PA_activeent then return false end
 	local ent = ply.PA_activeent
 	if not IsValid(ent) then return false end
@@ -428,7 +428,7 @@ local function precision_align_move_func( ply, cmd, args )
 		stack_ID = stack_ID + 1
 	end
 
-	for stacks = 1, math.max(stack, 1) do
+	for _ = 1, math.max(stack, 1) do
 		-- Add to stack queue
 		if stack > 0 then
 			Queue_Add( ply, ent, stack_ID )
@@ -520,7 +520,7 @@ end
 -- 7 = Rotation type
 -- 8 = Stack number
 -- 9 = Repeat flag
-local function precision_align_rotate_func( ply, cmd, args )
+local function precision_align_rotate_func( ply, _, args )
 	if not ply.PA_activeent then return false end
 	local ent = ply.PA_activeent
 	if not IsValid(ent) then return false end
@@ -574,7 +574,7 @@ local function precision_align_rotate_func( ply, cmd, args )
 	end
 
 	-- Begin stacking
-	for stacks = 1, math.max(stack, 1) do
+	for _ = 1, math.max(stack, 1) do
 		-- Add to stack queue
 		if stack > 0 then
 			Queue_Add( ply, ent )
@@ -643,7 +643,7 @@ concommand.Add( PA_ .. "rotate", precision_align_rotate_func )
 -- 4,5,6 = Plane Normal Vector
 -- 7 = Stack number
 -- 8 = Repeat flag
-local function precision_align_mirror_func( ply, cmd, args )
+local function precision_align_mirror_func( ply, _, args )
 	if not ply.PA_activeent then return false end
 	local ent = ply.PA_activeent
 	if not IsValid(ent) then return false end
@@ -732,7 +732,7 @@ concommand.Add( PA_ .. "mirror", precision_align_mirror_func )
 -- Constrain ents
 --********************************************************************************************************************--
 
-local function precision_align_constraint_func( len, ply )
+local function precision_align_constraint_func( _, ply )
 	local data = net.ReadTable()
 
 	local constraint_type = data.Type
@@ -912,3 +912,17 @@ local function precision_align_constraint_func( len, ply )
 	return const
 end
 net.Receive( PA_ .. "constraint", precision_align_constraint_func )
+
+-- Keep a record of each player's last PA action
+function precision_align_lastaction_func( ply )
+	if not ply.PA_activeent then return false end
+	local ent = ply.PA_activeent
+	if not IsValid( ent ) then return false end
+	if not util.IsValidPhysicsObject( ent, 0 ) or IsValid( ent:GetParent() ) then return false end
+
+	local lastaction = action_table[ply]
+	if not lastaction then return false end
+
+	return lastaction.cmd( ply, nil, lastaction )
+end
+concommand.Add( PA_ .. "lastaction", precision_align_lastaction_func )

@@ -217,7 +217,7 @@ end
 
 -- Build CPanel
 if CLIENT then
-	function TOOL.BuildCPanel( pnl )
+	function TOOL.BuildCPanel()
 		include( "weapons/gmod_tool/stools/" .. PA .. "/ui.lua" )
 	end
 
@@ -371,20 +371,6 @@ function TOOL:LeftClick( trace )
 	return true
 end
 
--- Keep a record of each player's last PA action
-local function precision_align_lastaction_func( ply, cmd, args )
-	if not ply.PA_activeent then return false end
-	local ent = ply.PA_activeent
-	if not IsValid(ent) then return false end
-	if not util.IsValidPhysicsObject(ent, 0) or IsValid(ent:GetParent()) then return false end
-
-	local lastaction = action_table[ply]
-	if not lastaction then return false end
-
-	return lastaction.cmd( ply, nil, lastaction )
-end
-concommand.Add( PA_ .. "lastaction", precision_align_lastaction_func )
-
 -- Select Entities
 function TOOL:RightClick( trace )
 	if CLIENT then return true end
@@ -414,7 +400,7 @@ function TOOL:RightClick( trace )
 end
 
 -- Open Manipulation Panel
-function TOOL:Reload( trace )
+function TOOL:Reload()
 	if CLIENT then return false end
 	local ply = self:GetOwner()
 	ply:ConCommand( PA_ .. "open_panel" )
@@ -612,6 +598,6 @@ local function PA_DrawToolScreen( w, h )
 	end
 end
 
-function TOOL:DrawToolScreen( w, h )
+function TOOL:DrawToolScreen()
 	PA_DrawToolScreen()
 end
