@@ -18,6 +18,8 @@ AddCSLuaFile( PA .. "/ui.lua" )
 AddCSLuaFile( PA .. "/manipulation_panel.lua" )
 AddCSLuaFile( PA .. "/prop_functions.lua" )
 
+local typeCvar = GetConVar("precision_align_tooltype")
+
 TOOL.ClientConVar =
 {
 	-- Tool menu options
@@ -563,7 +565,7 @@ local function PA_DrawToolScreen( w, h )
 		w = tonumber(w) or 256
 		h = tonumber(h) or 256
 
-		local curToolType = GetConVar("precision_align_tooltype"):GetInt()
+		local curToolType = typeCvar:GetInt()
 
 		-- Background colour
 		local Colour_Selected = ColourLookup[curToolType] or BGColor_Display
@@ -575,7 +577,7 @@ local function PA_DrawToolScreen( w, h )
 
 		-- Title text / background
 		surface.SetFont( "PAToolScreen_Title" )
-		local titletext = "Precision Alignment (unofficial)"
+		local titletext = "Precision Alignment"
 		local _, texth = surface.GetTextSize( titletext )
 
 		surface.SetDrawColor( BGColor_Background )

@@ -7,27 +7,26 @@ local PA_VERSION = 9
 -- Standard functions
 local PA = "precision_align"
 local PA_ = PA .. "_"
---[[
--- Relative to data directory
-local help_file = "Precision Alignment Help/index.html"
 
--- Table cloning
-local function clone( T )
-	T2 = {}
-	for k, v in pairs (T) do
-		T2[k] = v
-	end
-	return T2
-end
-]]
+local showMsgsCvar = GetConVar(PA_ .. "display_messages")
+local showWarnCvar = GetConVar(PA_ .. "display_warnings")
+local selectHCvar = GetConVar(PA_ .. "selectcolour_h")
+local selectSCvar = GetConVar(PA_ .. "selectcolour_s")
+local selectVCvar = GetConVar(PA_ .. "selectcolour_v")
+local selectACvar = GetConVar(PA_ .. "selectcolour_a")
+local attHCvar = GetConVar(PA_ .. "attachcolour_h")
+local attSCvar = GetConVar(PA_ .. "attachcolour_s")
+local attVCvar = GetConVar(PA_ .. "attachcolour_v")
+local attACvar = GetConVar(PA_ .. "attachcolour_a")
+
 local function Message(text)
-	if GetConVar(PA_ .. "display_messages"):GetInt() == 1 then
+	if showMsgsCvar:GetInt() == 1 then
 		LocalPlayer():ChatPrint("(PA) " .. text)
 	end
 end
 
 local function Warning( text )
-	if GetConVar(PA_ .. "display_warnings"):GetInt() == 1 then
+	if showWarnCvar:GetInt() == 1 then
 		LocalPlayer():ChatPrint("(PA) ERROR: " .. text)
 	end
 end
@@ -128,33 +127,6 @@ function MANIPULATION_FRAME:Init()
 		self.button_help:SetFunction( function()
 			return gui.OpenURL( "https:--sourceforge.net/userapps/mediawiki/wenli/index.php?title=Precision_Alignment" )
 		end )
-
-
-	-- Alpha slider
-	--self.slider_alpha = vgui.Create( "DAlphaBar", self )
-	--	self.slider_alpha:SetPos(910, 55)
-	--	self.slider_alpha:SetSize(25, 435)
-		-- self.slider_alpha.imgBackground:Remove()
-		-- self.slider_alpha.PerformLayout = function() DSlider.PerformLayout( self.slider_alpha ) end
-	--	self.slider_alpha.OnChange = function( panel, alpha )
-	--		self.body:SetAlpha(alpha)
-	--		panel:SetAlpha(255)
-	--	end
-	--	self.slider_alpha:SetValue(0)
-
-	--[[
-	-- Initialize colour settings
-	local function SetBarColour()
-		local H = GetConVar( PA_ .. "selectcolour_h" ):GetInt()
-		local S = GetConVar( PA_ .. "selectcolour_s" ):GetInt()
-		local V = GetConVar( PA_ .. "selectcolour_v" ):GetInt()
-		-- self.slider_alpha:SetFGColor( HSVToColor( H, S, V ) )
-	end
-	cvars.AddChangeCallback( PA_ .. "selectcolour_h", SetBarColour )
-	cvars.AddChangeCallback( PA_ .. "selectcolour_s", SetBarColour )
-	cvars.AddChangeCallback( PA_ .. "selectcolour_v", SetBarColour )
-	SetBarColour()
-	]]
 end
 
 
@@ -324,14 +296,12 @@ function DISPLAYS_TAB:Init()
 			return true
 		end )
 
-
 	AddMenuText( "Entity Selection Colour", 575, 5, self )
 
 	self.colourcircle_enthighlight = vgui.Create("PA_ColourControl", self)
 		self.colourcircle_enthighlight:SetPos(590, 15)
 		self.colourcircle_enthighlight:SetConVar( PA_ .. "selectcolour" )
 		self.colourcircle_enthighlight:SetDefaults( 230, 0.6, 1, 255 )
-
 
 	AddMenuText( "Attachment Line Colour", 575, 225, self )
 
@@ -340,20 +310,18 @@ function DISPLAYS_TAB:Init()
 		self.colourcircle_attachment:SetConVar( PA_ .. "attachcolour" )
 		self.colourcircle_attachment:SetDefaults( 180, 1, 1, 150 )
 
-
 	-- Initialize colour settings
-	self.colourcircle_enthighlight:SetColor(	GetConVar(PA_ .. "selectcolour_h"):GetInt(),
-												GetConVar(PA_ .. "selectcolour_s"):GetInt(),
-												GetConVar(PA_ .. "selectcolour_v"):GetInt(),
-												GetConVar(PA_ .. "selectcolour_a"):GetInt()
+	self.colourcircle_enthighlight:SetColor(	selectHCvar:GetInt(),
+												selectSCvar:GetInt(),
+												selectVCvar:GetInt(),
+												selectACvar:GetInt()
 											)
 
-	self.colourcircle_attachment:SetColor(	GetConVar(PA_ .. "attachcolour_h"):GetInt(),
-											GetConVar(PA_ .. "attachcolour_s"):GetInt(),
-											GetConVar(PA_ .. "attachcolour_v"):GetInt(),
-											GetConVar(PA_ .. "attachcolour_a"):GetInt()
+	self.colourcircle_attachment:SetColor(	attHCvar:GetInt(),
+											attSCvar:GetInt(),
+											attVCvar:GetInt(),
+											attACvar:GetInt()
 										)
-
 end
 
 function DISPLAYS_TAB:Paint()

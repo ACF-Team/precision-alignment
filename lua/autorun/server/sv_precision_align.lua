@@ -11,7 +11,7 @@ util.AddNetworkString( PA_ .. "ent" )
 -- Used to record each player's last PA action
 local action_table = {}
 
-CreateConVar( PA_ .. "stack_delay", 0.01 )
+local delayCvar = CreateConVar( PA_ .. "stack_delay", 0.01 )
 
 -- Undo
 local function UndoMove( _, ent, pos, ang )
@@ -27,7 +27,6 @@ local function playsound( ply, bool )
 		ply:EmitSound("buttons/button14.wav", 100, 100)
 	end
 end
-
 
 --********************************************************************************************************************--
 -- Mirror lists
@@ -393,17 +392,15 @@ local function Queue_Add( ply, ent, stackID )
 	-- Start processing the stack queue
 	if not processing then
 		processing = true
-		local Delay = GetConVar( PA_ .. "stack_delay" ):GetInt() -- ( PA_ .. "stack_delay", 0.1 )
+		local Delay = delayCvar:GetInt() -- ( PA_ .. "stack_delay", 0.1 )
 
 		timer.Create( "PA_StackTimer", Delay, 0, Stack_Loop )
 	end
 end
 
-
 --********************************************************************************************************************--
 -- Move ents
 --********************************************************************************************************************--
-
 
 -- Args list:
 -- 1,2,3 = Movement vector

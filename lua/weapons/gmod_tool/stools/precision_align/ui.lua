@@ -4,7 +4,6 @@ if SERVER then return end
 local PA = "precision_align"
 local PA_ = PA .. "_"
 
--- local ent_active = ents.GetByIndex( GetConVar(PA_ .. "ent_active"):GetInt() )
 PA_selected_point = 1
 PA_selected_line = 1
 PA_selected_plane = 1
@@ -28,8 +27,22 @@ local pointcolour = { r = 255, g = 0, b = 0, a = 255 }
 local linecolour = { r = 0, g = 0, b = 255, a = 255 }
 local planecolour = { r = 0, g = 230, b = 0, a = 255 }
 
+local showWarnsCvar = GetConVar( PA_ .. "display_warnings" )
+local stackNumCvar = GetConVar( PA_ .. "stack_num" )
+local stackNoCollideCvar = GetConVar( PA_ .. "stack_nocollide" )
+local attachHCvar = GetConVar( PA_ .. "attachcolour_h" )
+local attachSCvar = GetConVar( PA_ .. "attachcolour_s" )
+local attachVCvar = GetConVar( PA_ .. "attachcolour_v" )
+local attachACvar = GetConVar( PA_ .. "attachcolour_a" )
+local tooltypeCvar = GetConVar( PA_ .. "tooltype" )
+local sizePointCvar = GetConVar( PA_ .. "size_point" )
+local sizeLineStartCvar = GetConVar( PA_ .. "size_line_start" )
+local sizeLineEndCvar = GetConVar( PA_ .. "size_line_end" )
+local sizePlaneCvar = GetConVar( PA_ .. "size_plane" )
+local sizePlaneNormCvar = GetConVar( PA_ .. "size_plane_normal" )
+
 local function Warning( text )
-	if GetConVar( PA_ .. "display_warnings" ):GetInt() == 1 then
+	if showWarnsCvar:GetInt() == 1 then
 		LocalPlayer():ChatPrint( "(PA) ERROR: " .. text )
 	end
 end
@@ -86,7 +99,7 @@ function STACK_POPUP:Init()
 		self.slider_stackamount:SetText( "" )
 		self.slider_stackamount:SetMinMax( 1, 20 )
 		self.slider_stackamount:SetDecimals( 0 )
-		self.slider_stackamount:SetValue( GetConVar( PA_ .. "stack_num" ):GetInt() )
+		self.slider_stackamount:SetValue( stackNumCvar:GetInt() )
 		self.slider_stackamount.Text = self.slider_stackamount:GetTextArea()
 		self.slider_stackamount.Text.OnEnter = function()
 			self.button_ok:DoClick()
@@ -99,7 +112,7 @@ function STACK_POPUP:Init()
 		self.checkbox_nocollide:SizeToContents()
 		self.checkbox_nocollide:AlignBottom( 45 )
 		self.checkbox_nocollide:AlignLeft( 10 )
-		self.checkbox_nocollide:SetValue( GetConVar( PA_ .. "stack_nocollide" ):GetInt() )
+		self.checkbox_nocollide:SetValue( stackNoCollideCvar:GetInt() )
 
 	self.button_ok = vgui.Create( "DButton", self )
 		self.button_ok:SetText( "OK" )
@@ -841,8 +854,8 @@ vgui.Register("PA_Constraint_Slider", CONSTRAINT_SLIDER, "PA_XYZ_Slider")
 
 local COLOUR_CIRCLE = {}
 function COLOUR_CIRCLE:Init()
-	local H = GetConVar( PA_ .. "attachcolour_h" ):GetInt()
-	local S = GetConVar( PA_ .. "attachcolour_s" ):GetInt()
+	local H = attachHCvar:GetInt()
+	local S = attachSCvar:GetInt()
 	self:SetColor( H,S )
 end
 
@@ -1537,7 +1550,7 @@ function TOOL_LIST:Init()
 		self.list_tooltype:AddLine("Line  - Hitnormal")
 		self.list_tooltype:AddLine("Plane - Hitpos + Hitnormal")
 		self.list_tooltype:AddLine("Plane - Hitnormal")
-		self.list_tooltype:SelectItem( self.list_tooltype:GetLine( GetConVar( PA_ .. "tooltype" ):GetInt() ) )
+		self.list_tooltype:SelectItem( self.list_tooltype:GetLine( tooltypeCvar:GetInt() ) )
 		self.list_tooltype.OnRowSelected = function(parent, line, isselected)
 			RunConsoleCommand( PA_ .. "tooltype", tostring(line) )
 		end
@@ -1721,7 +1734,7 @@ local function umsg_click_hook()
 	local shift = LocalPlayer():KeyDown( IN_SPEED )
 	local alt = LocalPlayer():KeyDown( IN_WALK )
 
-	local tooltype = GetConVar( PA_ .. "tooltype" ):GetInt()
+	local tooltype = tooltypeCvar:GetInt()
 
 	-- Points
 	if tooltype <= 4 then
@@ -1807,22 +1820,20 @@ local function umsg_entity_hook()
 end
 net.Receive( PA_ .. "ent", umsg_entity_hook )
 
-
 --********************************************************************************************************************--
 -- HUD Display
 --********************************************************************************************************************--
 
-
 -- Construct draw sizes
-local point_size_min = math.max( GetConVar( PA_ .. "size_point" ):GetInt(), 1 )
-local point_size_max = GetConVar( PA_ .. "size_point" ):GetInt() * 1000
+local point_size_min = math.max( sizePointCvar:GetInt(), 1 )
+local point_size_max = sizePointCvar:GetInt() * 1000
 
-local line_size_start = GetConVar( PA_ .. "size_line_start" ):GetInt()
-local line_size_min = GetConVar( PA_ .. "size_line_end" ):GetInt() -- End (double bar)
+local line_size_start = sizeLineStartCvar:GetInt()
+local line_size_min = sizeLineEndCvar:GetInt() -- End (double bar)
 local line_size_max = line_size_min * 1000
 
-local plane_size = GetConVar( PA_ .. "size_plane" ):GetInt()
-local plane_size_normal = GetConVar( PA_ .. "size_plane_normal" ):GetInt()
+local plane_size = sizePlaneCvar:GetInt()
+local plane_size_normal = sizePlaneNormCvar:GetInt()
 local text_min, text_max = 1, 4500
 
 local draw_attachments = LocalPlayer():GetInfo( PA_ .. "draw_attachments" )
@@ -1834,10 +1845,10 @@ cvars.AddChangeCallback( PA_ .. "size_plane", function( CVar, Prev, New ) plane_
 cvars.AddChangeCallback( PA_ .. "size_plane_normal", function( CVar, Prev, New ) plane_size_normal = tonumber(New) end  )
 
 -- Manage attachment line colour changes
-local H = GetConVar( PA_ .. "attachcolour_h" ):GetInt()
-local S = GetConVar( PA_ .. "attachcolour_s" ):GetInt()
-local V = GetConVar( PA_ .. "attachcolour_v" ):GetInt()
-local A = GetConVar( PA_ .. "attachcolour_a" ):GetInt()
+local H = attachHCvar:GetInt()
+local S = attachSCvar:GetInt()
+local V = attachVCvar:GetInt()
+local A = attachACvar:GetInt()
 local attachcolourHSV = { h = H, s = S, v = V, a = A }
 local attachcolourRGB = HSVToColor( H, S, V )
 attachcolourRGB.a = A

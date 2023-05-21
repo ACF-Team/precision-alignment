@@ -6,18 +6,23 @@ local PA_ = PA .. "_"
 
 PA_funcs = {}
 
+local showMsgsCvar = GetConVar(PA_ .. "display_messages")
+local showWarnsCvar = GetConVar(PA_ .. "display_warnings")
+local stackCvar = GetConVar( PA_ .. "stack_num" )
+local lengthCvar = GetConVar( PA_ .. "default_linelength" )
+
 --********************************************************************************************************************--
 -- Global  Functions
 --********************************************************************************************************************--
 
 local function Message( text )
-	if GetConVar(PA_ .. "display_messages"):GetInt() == 1 then
+	if showMsgsCvar:GetInt() == 1 then
 		LocalPlayer():ChatPrint("(PA) " .. text)
 	end
 end
 
 local function Warning( text )
-	if GetConVar(PA_ .. "display_warnings"):GetInt() == 1 then
+	if showWarnsCvar:GetInt() == 1 then
 		LocalPlayer():ChatPrint("(PA) ERROR: " .. text)
 	end
 end
@@ -50,7 +55,7 @@ PA_funcs.move_entity = function( vec1, vec2, activeent )
 	local shift = LocalPlayer():KeyDown( IN_SPEED )
 	local stack = 0
 	if shift then
-		stack = GetConVar( PA_ .. "stack_num" ):GetInt()
+		stack = stackCvar:GetInt()
 		if stack == 1 then
 			Message("Stacked entity by " .. tostring(v))
 		else
@@ -88,7 +93,7 @@ PA_funcs.rotate_entity = function( ang, vec, relative, activeent )
 	local shift = LocalPlayer():KeyDown( IN_SPEED )
 	local stack = 0
 	if shift then
-		stack = GetConVar( PA_ .. "stack_num" ):GetInt()
+		stack = stackCvar:GetInt()
 		if stack == 1 then
 			msgstring = "Stacked Entity "
 		else
@@ -375,7 +380,7 @@ PA_funcs.set_line = function( line, startpoint, endpoint, direction, length )
 			if PA_funcs.construct_exists( "Line", line ) then
 				len = startpoint_old:Distance( precision_align_lines[line].endpoint )
 			else
-				len = GetConVar( PA_ .. "default_linelength" ):GetInt()
+				len = lengthCvar:GetInt()
 			end
 		else
 			len = length
@@ -1108,7 +1113,7 @@ PA_funcs.plane_mirror_entity = function( planeID, activeent )
 	local shift = LocalPlayer():KeyDown( IN_SPEED )
 	local stack = 0
 	if shift then
-		stack = GetConVar( PA_ .. "stack_num" ):GetInt()
+		stack = stackCvar:GetInt()
 	end
 
 	-- Mirror by concommand directly
