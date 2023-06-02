@@ -18,7 +18,7 @@ AddCSLuaFile( PA .. "/ui.lua" )
 AddCSLuaFile( PA .. "/manipulation_panel.lua" )
 AddCSLuaFile( PA .. "/prop_functions.lua" )
 
-local typeCvar = GetConVar("precision_align_tooltype")
+-- local typeCvar = GetConVar("precision_align_tooltype")
 
 TOOL.ClientConVar =
 {
@@ -565,7 +565,7 @@ local function PA_DrawToolScreen( w, h )
 		w = tonumber(w) or 256
 		h = tonumber(h) or 256
 
-		local curToolType = typeCvar:GetInt()
+		local curToolType = GetConVar("precision_align_tooltype"):GetInt()
 
 		-- Background colour
 		local Colour_Selected = ColourLookup[curToolType] or BGColor_Display
