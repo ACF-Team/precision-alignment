@@ -16,7 +16,6 @@ local PA_ = PA .. "_"
 
 AddCSLuaFile( PA .. "/ui.lua" )
 AddCSLuaFile( PA .. "/manipulation_panel.lua" )
-AddCSLuaFile( PA .. "/prop_functions.lua" )
 
 -- local typeCvar = GetConVar("precision_align_tooltype")
 
@@ -26,11 +25,8 @@ TOOL.ClientConVar =
 	["edge_snap"] 			= "1",
 	["centre_snap"] 		= "1",
 	["snap_distance"] 		= "100",
-	["display_messages"] 	= "0",
-	["display_warnings"] 	= "1",
 	["tooltype"]			= "1",
 	["draw_attachments"]	= "0",
-	["default_linelength"]	= "200",
 
 	-- Construct draw sizes
 	["size_point"]			= "5",
@@ -104,24 +100,12 @@ TOOL.ClientConVar =
 	["wire_hydraulic_material"]	= "cable/rope",
 
 	-- Stack number
-	["stack_num"]			= "1",
 	["stack_nocollide"]		= "0"
 }
 
 -- Client
 
 if CLIENT then
-	precision_align_points = {}
-	precision_align_lines = {}
-	precision_align_planes = {}
-
-	-- Initialize tables, set defaults
-	for i = 1, 9 do
-		precision_align_points[i] = {visible = true}
-		precision_align_lines[i] = {visible = true}
-		precision_align_planes[i] = {visible = true}
-	end
-
 	language.Add("Tool.precision_align.name", "Precision Alignment")
 	language.Add("Tool.precision_align.desc", "Precision prop alignment tool")
 	language.Add("Tool.precision_align.left", "Place constructs")

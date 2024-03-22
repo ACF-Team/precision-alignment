@@ -11,7 +11,6 @@ PA_selected_plane = 1
 PA_activeent = nil
 
 include( "weapons/gmod_tool/stools/" .. PA .. "/manipulation_panel.lua" )
-include( "weapons/gmod_tool/stools/" .. PA .. "/prop_functions.lua" )
 
 local CPanel = controlpanel.Get( PA )
 

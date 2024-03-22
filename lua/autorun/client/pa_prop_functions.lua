@@ -6,10 +6,27 @@ local PA_ = PA .. "_"
 
 PA_funcs = {}
 
-local showMsgsCvar = GetConVar(PA_ .. "display_messages")
-local showWarnsCvar = GetConVar(PA_ .. "display_warnings")
-local stackCvar = GetConVar( PA_ .. "stack_num" )
-local lengthCvar = GetConVar( PA_ .. "default_linelength" )
+precision_align_points = {}
+precision_align_lines = {}
+precision_align_planes = {}
+
+PA_selected_point = 1
+PA_selected_line = 1
+PA_selected_plane = 1
+
+PA_activeent = nil
+
+-- Initialize tables, set defaults
+for i = 1, 9 do
+	precision_align_points[i] = {visible = true}
+	precision_align_lines[i] = {visible = true}
+	precision_align_planes[i] = {visible = true}
+end
+
+local showMsgsCvar = CreateClientConVar(PA_ .. "display_messages", "0", true, false, _, 0, 1)
+local showWarnsCvar = CreateClientConVar(PA_ .. "display_warnings", "1", true, false, _, 0, 1)
+local stackCvar = CreateClientConVar(PA_ .. "stack_num", "1", true, false, _, 1, 20)
+local lengthCvar = CreateClientConVar(PA_ .. "default_linelength", "200", true, false, _, 0.001)
 
 --********************************************************************************************************************--
 -- Global  Functions
