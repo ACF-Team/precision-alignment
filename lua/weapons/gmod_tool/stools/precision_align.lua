@@ -147,16 +147,16 @@ if SERVER then
 		local ply = self:GetOwner()
 		local activeent = ply.PA_activeent
 
-		local function Deselect()
-			if IsValid( ent ) and ent.PA then
-				local colour = ent.PA.TrueColour
+		local function Deselect( oldent )
+			if IsValid( oldent ) and oldent.PA then
+				local colour = oldent.PA.TrueColour
 
 				if colour then
-					ent:SetColor(  colour  )
+					oldent:SetColor( colour )
 				end
 
-				ent.PA.Ply.PA_activeent = nil
-				ent.PA = nil
+				oldent.PA.Ply.PA_activeent = nil
+				oldent.PA = nil
 			end
 		end
 
