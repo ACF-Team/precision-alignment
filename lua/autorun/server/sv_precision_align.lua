@@ -8,6 +8,8 @@ util.AddNetworkString( PA_ .. "constraint" )
 util.AddNetworkString( PA_ .. "click" )
 util.AddNetworkString( PA_ .. "ent" )
 
+PrecisionAlign = PrecisionAlign or {}
+
 -- Used to record each player's last PA action
 local action_table = {}
 
@@ -407,8 +409,8 @@ end
 -- 4 = Stack number
 -- 5 = Repeat flag
 local function precision_align_move_func( ply, _, args )
-	if not ply.PA_activeent then return false end
-	local ent = ply.PA_activeent
+	if not ply.PrecisionAlign_ActiveEnt then return false end
+	local ent = ply.PrecisionAlign_ActiveEnt
 	if not IsValid(ent) then return false end
 	if not util.IsValidPhysicsObject(ent, 0) or IsValid(ent:GetParent()) then return false end
 
@@ -518,8 +520,8 @@ end
 -- 8 = Stack number
 -- 9 = Repeat flag
 local function precision_align_rotate_func( ply, _, args )
-	if not ply.PA_activeent then return false end
-	local ent = ply.PA_activeent
+	if not ply.PrecisionAlign_ActiveEnt then return false end
+	local ent = ply.PrecisionAlign_ActiveEnt
 	if not IsValid(ent) then return false end
 	if not util.IsValidPhysicsObject(ent, 0) or IsValid(ent:GetParent()) then return false end
 
@@ -641,8 +643,8 @@ concommand.Add( PA_ .. "rotate", precision_align_rotate_func )
 -- 7 = Stack number
 -- 8 = Repeat flag
 local function precision_align_mirror_func( ply, _, args )
-	if not ply.PA_activeent then return false end
-	local ent = ply.PA_activeent
+	if not ply.PrecisionAlign_ActiveEnt then return false end
+	local ent = ply.PrecisionAlign_ActiveEnt
 	if not IsValid(ent) then return false end
 	if not util.IsValidPhysicsObject(ent, 0) or IsValid(ent:GetParent()) then return false end
 
@@ -912,9 +914,9 @@ end
 net.Receive( PA_ .. "constraint", precision_align_constraint_func )
 
 -- Keep a record of each player's last PA action
-function precision_align_lastaction_func( ply )
-	if not ply.PA_activeent then return false end
-	local ent = ply.PA_activeent
+function PrecisionAlign.LastAction( ply )
+	if not ply.PrecisionAlign_ActiveEnt then return false end
+	local ent = ply.PrecisionAlign_ActiveEnt
 	if not IsValid( ent ) then return false end
 	if not util.IsValidPhysicsObject( ent, 0 ) or IsValid( ent:GetParent() ) then return false end
 
@@ -923,4 +925,4 @@ function precision_align_lastaction_func( ply )
 
 	return lastaction.cmd( ply, nil, lastaction )
 end
-concommand.Add( PA_ .. "lastaction", precision_align_lastaction_func )
+concommand.Add( PA_ .. "lastaction", PrecisionAlign.LastAction )

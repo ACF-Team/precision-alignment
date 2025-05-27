@@ -4,11 +4,11 @@ if SERVER then return end
 local PA = "precision_align"
 local PA_ = PA .. "_"
 
-PA_selected_point = 1
-PA_selected_line = 1
-PA_selected_plane = 1
+PrecisionAlign.SelectedPoint = 1
+PrecisionAlign.SelectedLine = 1
+PrecisionAlign.SelectedPlane = 1
 
-PA_activeent = nil
+PrecisionAlign.ActiveEnt = nil
 
 include( "weapons/gmod_tool/stools/" .. PA .. "/manipulation_panel.lua" )
 
@@ -216,7 +216,7 @@ end
 function INDICATOR:Paint(w,h)
 	local textbox = self:GetParent()
 
-	if PA_funcs.construct_exists(textbox:GetListView().construct_type, textbox:GetID()) then
+	if PrecisionAlign.Functions.construct_exists(textbox:GetListView().construct_type, textbox:GetID()) then
 		draw.RoundedBox( 6, 0, 0, self:GetWide(), self:GetTall(), Color(0,230,0,255) )
 	end
 end
@@ -751,9 +751,9 @@ function MOVE_BUTTON:SetFunction( func )
 end
 
 function MOVE_BUTTON:Think()
-	if IsValid(PA_activeent) and self:GetDisabled() then
+	if IsValid(PrecisionAlign.ActiveEnt) and self:GetDisabled() then
 		self:SetDisabled(false)
-	elseif not IsValid(PA_activeent) and not self:GetDisabled() then
+	elseif not IsValid(PrecisionAlign.ActiveEnt) and not self:GetDisabled() then
 		self:SetDisabled(true)
 	end
 end
@@ -1122,22 +1122,22 @@ function CONSTRUCT_MULTISELECT:Init()
 
 			for k, v in pairs( self.list_points:GetSelected() ) do
 				ID = v:GetID()
-				if PA_funcs.construct_exists( "Point", ID ) then
-					PA_funcs.attach_point( ID, PA_activeent )
+				if PrecisionAlign.Functions.construct_exists( "Point", ID ) then
+					PrecisionAlign.Functions.attach_point( ID, PrecisionAlign.ActiveEnt )
 				end
 			end
 
 			for k, v in pairs( self.list_lines:GetSelected() ) do
 				ID = v:GetID()
-				if PA_funcs.construct_exists( "Line", ID ) then
-					PA_funcs.attach_line( ID, PA_activeent )
+				if PrecisionAlign.Functions.construct_exists( "Line", ID ) then
+					PrecisionAlign.Functions.attach_line( ID, PrecisionAlign.ActiveEnt )
 				end
 			end
 
 			for k, v in pairs( self.list_planes:GetSelected() ) do
 				ID = v:GetID()
-				if PA_funcs.construct_exists( "Plane", ID ) then
-					PA_funcs.attach_plane( ID, PA_activeent )
+				if PrecisionAlign.Functions.construct_exists( "Plane", ID ) then
+					PrecisionAlign.Functions.attach_plane( ID, PrecisionAlign.ActiveEnt )
 				end
 			end
 
@@ -1154,17 +1154,17 @@ function CONSTRUCT_MULTISELECT:Init()
 
 			for k, v in pairs( self.list_points:GetSelected() ) do
 				ID = v:GetID()
-				PA_funcs.delete_point( ID )
+				PrecisionAlign.Functions.delete_point( ID )
 			end
 
 			for k, v in pairs( self.list_lines:GetSelected() ) do
 				ID = v:GetID()
-				PA_funcs.delete_line( ID )
+				PrecisionAlign.Functions.delete_line( ID )
 			end
 
 			for k, v in pairs( self.list_planes:GetSelected() ) do
 				ID = v:GetID()
-				PA_funcs.delete_plane( ID )
+				PrecisionAlign.Functions.delete_plane( ID )
 			end
 
 			return true
@@ -1177,9 +1177,9 @@ function CONSTRUCT_MULTISELECT:Init()
 		self.button_deleteall:SetTooltip( "Delete all existing constructs" )
 		self.button_deleteall:SetFunction( function()
 
-			PA_funcs.delete_points()
-			PA_funcs.delete_lines()
-			PA_funcs.delete_planes()
+			PrecisionAlign.Functions.delete_points()
+			PrecisionAlign.Functions.delete_lines()
+			PrecisionAlign.Functions.delete_planes()
 
 			return true
 		end )
@@ -1196,9 +1196,9 @@ function CONSTRUCT_MULTISELECT:SelectAll( value )
 		end
 	end
 
-	SelectLines( self.list_points, precision_align_points )
-	SelectLines( self.list_lines, precision_align_lines )
-	SelectLines( self.list_planes, precision_align_planes )
+	SelectLines( self.list_points, PrecisionAlign.Points )
+	SelectLines( self.list_lines, PrecisionAlign.Lines )
+	SelectLines( self.list_planes, PrecisionAlign.Planes )
 end
 
 function CONSTRUCT_MULTISELECT:GetSelection()
@@ -1209,21 +1209,21 @@ function CONSTRUCT_MULTISELECT:GetSelection()
 
 	for k, v in pairs( self.list_points:GetSelected() ) do
 		local ID = v:GetID()
-		if PA_funcs.construct_exists( "Point", ID  ) then
+		if PrecisionAlign.Functions.construct_exists( "Point", ID  ) then
 			table.insert( selection.points, ID )
 		end
 	end
 
 	for k, v in pairs( self.list_lines:GetSelected() ) do
 		local ID = v:GetID()
-		if PA_funcs.construct_exists( "Line", ID  ) then
+		if PrecisionAlign.Functions.construct_exists( "Line", ID  ) then
 			table.insert( selection.lines, ID )
 		end
 	end
 
 	for k, v in pairs( self.list_planes:GetSelected() ) do
 		local ID = v:GetID()
-		if PA_funcs.construct_exists( "Plane", ID  ) then
+		if PrecisionAlign.Functions.construct_exists( "Plane", ID  ) then
 			table.insert( selection.planes, ID )
 		end
 	end
@@ -1317,7 +1317,7 @@ function TOOL_POINT_PANEL:Init()
 		self.list_primarypoint:SetMultiSelect(false)
 		self.list_primarypoint:SetIndicatorOffset( 15 )
 		self.list_primarypoint.OnRowSelected = function( _, line )
-			PA_selected_point = line
+			PrecisionAlign.SelectedPoint = line
 		end
 
 		self.list_primarypoint.DoDoubleClick = function( _, LineID )
@@ -1346,23 +1346,23 @@ function TOOL_POINT_PANEL:Init()
 	create_buttons_standard( self, "point" )
 
 		self.button_view:SetFunction( function()
-			if not PA_funcs.construct_exists( "Point", PA_selected_point ) then return false end
-			local point = PA_funcs.point_global( PA_selected_point )
-			return PA_funcs.set_playerview( point.origin )
+			if not PrecisionAlign.Functions.construct_exists( "Point", PrecisionAlign.SelectedPoint ) then return false end
+			local point = PrecisionAlign.Functions.point_global( PrecisionAlign.SelectedPoint )
+			return PrecisionAlign.Functions.set_playerview( point.origin )
 		end )
 
 		self.button_delete:SetFunction( function()
-			return PA_funcs.delete_point( PA_selected_point )
+			return PrecisionAlign.Functions.delete_point( PrecisionAlign.SelectedPoint )
 		end )
 
 		self.button_attach:SetFunction( function()
-			return PA_funcs.attach_point( PA_selected_point, PA_activeent )
+			return PrecisionAlign.Functions.attach_point( PrecisionAlign.SelectedPoint, PrecisionAlign.ActiveEnt )
 		end )
 
 		self.button_deleteall:SetFunction( function()
 			self.list_primarypoint:SelectFirstItem()
 			self.list_secondarypoint:SelectFirstItem()
-			return PA_funcs.delete_points()
+			return PrecisionAlign.Functions.delete_points()
 		end )
 
 	self.button_moveentity = vgui.Create( "PA_Move_Button", self )
@@ -1371,21 +1371,21 @@ function TOOL_POINT_PANEL:Init()
 		self.button_moveentity:SetText( "Move Entity" )
 		self.button_moveentity:SetTooltip( "Move entity by Primary -> Secondary" )
 		self.button_moveentity:SetFunction( function()
-			local PA_selected_point2 = self.list_secondarypoint:GetSelectedLine()
-			if PA_selected_point == PA_selected_point2 then
+			PrecisionAlign.SelectedPoint2 = self.list_secondarypoint:GetSelectedLine()
+			if PrecisionAlign.SelectedPoint == PrecisionAlign.SelectedPoint2 then
 				Warning("Cannot move between the same point!")
 				return false
 			end
 
-			local point1 = PA_funcs.point_global( PA_selected_point )
-			local point2 = PA_funcs.point_global( PA_selected_point2 )
+			local point1 = PrecisionAlign.Functions.point_global( PrecisionAlign.SelectedPoint )
+			local point2 = PrecisionAlign.Functions.point_global( PrecisionAlign.SelectedPoint2 )
 
 			if not point1 or not point2 then
 				Warning("Points not correctly defined")
 				return false
 			end
 
-			if not PA_funcs.move_entity(point1.origin, point2.origin, PA_activeent) then return false end
+			if not PrecisionAlign.Functions.move_entity(point1.origin, point2.origin, PrecisionAlign.ActiveEnt) then return false end
 		end )
 end
 
@@ -1409,7 +1409,7 @@ function TOOL_LINE_PANEL:Init()
 		self.list_line:SetMultiSelect(false)
 		self.list_line:SetIndicatorOffset( 15 )
 		self.list_line.OnRowSelected = function( _, line )
-			PA_selected_line = line
+			PrecisionAlign.SelectedLine = line
 		end
 
 		self.list_line.DoDoubleClick = function( _, LineID )
@@ -1422,22 +1422,22 @@ function TOOL_LINE_PANEL:Init()
 	create_buttons_standard( self, "line" )
 
 		self.button_view:SetFunction( function()
-			if not PA_funcs.construct_exists( "Line", PA_selected_line ) then return false end
-			local line = PA_funcs.line_global( PA_selected_line )
-			return PA_funcs.set_playerview( line.startpoint )
+			if not PrecisionAlign.Functions.construct_exists( "Line", PrecisionAlign.SelectedLine ) then return false end
+			local line = PrecisionAlign.Functions.line_global( PrecisionAlign.SelectedLine )
+			return PrecisionAlign.Functions.set_playerview( line.startpoint )
 		end )
 
 		self.button_delete:SetFunction( function()
-			return PA_funcs.delete_line(PA_selected_line)
+			return PrecisionAlign.Functions.delete_line(PrecisionAlign.SelectedLine)
 		end )
 
 		self.button_attach:SetFunction( function()
-			return PA_funcs.attach_line(PA_selected_line, PA_activeent)
+			return PrecisionAlign.Functions.attach_line(PrecisionAlign.SelectedLine, PrecisionAlign.ActiveEnt)
 		end )
 
 		self.button_deleteall:SetFunction( function()
 			self.list_line:SelectFirstItem()
-			return PA_funcs.delete_lines()
+			return PrecisionAlign.Functions.delete_lines()
 		end )
 
 	self.button_moveentity = vgui.Create( "PA_Move_Button", self )
@@ -1446,7 +1446,7 @@ function TOOL_LINE_PANEL:Init()
 		self.button_moveentity:SetText( "Move Entity" )
 		self.button_moveentity:SetTooltip( "Move entity by line" )
 		self.button_moveentity:SetFunction( function()
-			local line = PA_funcs.line_global(PA_selected_line)
+			local line = PrecisionAlign.Functions.line_global(PrecisionAlign.SelectedLine)
 			if not line then
 				Warning("Line not correctly defined")
 				return false
@@ -1454,7 +1454,7 @@ function TOOL_LINE_PANEL:Init()
 
 			local point1 = line.startpoint
 			local point2 = line.endpoint
-			if not PA_funcs.move_entity(point1, point2, PA_activeent) then return false end
+			if not PrecisionAlign.Functions.move_entity(point1, point2, PrecisionAlign.ActiveEnt) then return false end
 		end )
 end
 
@@ -1478,7 +1478,7 @@ function TOOL_PLANE_PANEL:Init()
 		self.list_plane:SetMultiSelect(false)
 		self.list_plane:SetIndicatorOffset( 15 )
 		self.list_plane.OnRowSelected = function( _, line )
-			PA_selected_plane = line
+			PrecisionAlign.SelectedPlane = line
 		end
 
 		self.list_plane.DoDoubleClick = function( _, LineID )
@@ -1491,22 +1491,22 @@ function TOOL_PLANE_PANEL:Init()
 	create_buttons_standard( self, "plane" )
 
 		self.button_view:SetFunction( function()
-			if not PA_funcs.construct_exists( "Plane", PA_selected_plane ) then return false end
-			local plane = PA_funcs.plane_global( PA_selected_plane )
-			return PA_funcs.set_playerview( plane.origin )
+			if not PrecisionAlign.Functions.construct_exists( "Plane", PrecisionAlign.SelectedPlane ) then return false end
+			local plane = PrecisionAlign.Functions.plane_global( PrecisionAlign.SelectedPlane )
+			return PrecisionAlign.Functions.set_playerview( plane.origin )
 		end )
 
 		self.button_delete:SetFunction( function()
-			return PA_funcs.delete_plane(PA_selected_plane)
+			return PrecisionAlign.Functions.delete_plane(PrecisionAlign.SelectedPlane)
 		end )
 
 		self.button_attach:SetFunction( function()
-			return PA_funcs.attach_plane(PA_selected_plane, PA_activeent)
+			return PrecisionAlign.Functions.attach_plane(PrecisionAlign.SelectedPlane, PrecisionAlign.ActiveEnt)
 		end )
 
 		self.button_deleteall:SetFunction( function()
 			self.list_plane:SelectFirstItem()
-			return PA_funcs.delete_planes()
+			return PrecisionAlign.Functions.delete_planes()
 		end )
 end
 
@@ -1677,33 +1677,33 @@ CPanel.plane_window = plane_window
 
 
 local function select_next_point()
-	if PA_selected_point < 9 and PA_funcs.construct_exists( "Point", PA_selected_point ) then
-		PA_selected_point = PA_selected_point + 1
+	if PrecisionAlign.SelectedPoint < 9 and PrecisionAlign.Functions.construct_exists( "Point", PrecisionAlign.SelectedPoint ) then
+		PrecisionAlign.SelectedPoint = PrecisionAlign.SelectedPoint + 1
 		local dlist_points = controlpanel.Get( PA ).point_window.list_primarypoint
 		dlist_points:ClearSelection()
-		dlist_points:SelectItem( dlist_points:GetLine(PA_selected_point) )
+		dlist_points:SelectItem( dlist_points:GetLine(PrecisionAlign.SelectedPoint) )
 		return true
 	end
 	return false
 end
 
 local function select_next_line()
-	if PA_selected_line < 9 and PA_funcs.construct_exists( "Line", PA_selected_line ) then
-		PA_selected_line = PA_selected_line + 1
+	if PrecisionAlign.SelectedLine < 9 and PrecisionAlign.Functions.construct_exists( "Line", PrecisionAlign.SelectedLine ) then
+		PrecisionAlign.SelectedLine = PrecisionAlign.SelectedLine + 1
 		local dlist_lines = controlpanel.Get( PA ).line_window.list_line
 		dlist_lines:ClearSelection()
-		dlist_lines:SelectItem( dlist_lines:GetLine(PA_selected_line) )
+		dlist_lines:SelectItem( dlist_lines:GetLine(PrecisionAlign.SelectedLine) )
 		return true
 	end
 	return false
 end
 
 local function select_next_plane()
-	if PA_selected_plane < 9 and PA_funcs.construct_exists( "Plane", PA_selected_plane ) then
-		PA_selected_plane = PA_selected_plane + 1
+	if PrecisionAlign.SelectedPlane < 9 and PrecisionAlign.Functions.construct_exists( "Plane", PrecisionAlign.SelectedPlane ) then
+		PrecisionAlign.SelectedPlane = PrecisionAlign.SelectedPlane + 1
 		local dlist_planes = controlpanel.Get( PA ).plane_window.list_plane
 		dlist_planes:ClearSelection()
-		dlist_planes:SelectItem( dlist_planes:GetLine(PA_selected_plane) )
+		dlist_planes:SelectItem( dlist_planes:GetLine(PrecisionAlign.SelectedPlane) )
 		return true
 	end
 	return false
@@ -1726,16 +1726,16 @@ local function umsg_click_hook()
 			select_next_point()
 		end
 
-		PA_funcs.set_point(PA_selected_point, point)
+		PrecisionAlign.Functions.set_point(PrecisionAlign.SelectedPoint, point)
 		-- Auto-attach to selected ent
 		if alt then
-			if PA_activeent then
-				PA_funcs.attach_point( PA_selected_point, PA_activeent )
-			elseif precision_align_points[PA_selected_point].entity then
-				PA_funcs.attach_point( PA_selected_point, nil )
+			if PrecisionAlign.ActiveEnt then
+				PrecisionAlign.Functions.attach_point( PrecisionAlign.SelectedPoint, PrecisionAlign.ActiveEnt )
+			elseif PrecisionAlign.Points[PrecisionAlign.SelectedPoint].entity then
+				PrecisionAlign.Functions.attach_point( PrecisionAlign.SelectedPoint, nil )
 			end
-		elseif precision_align_points[PA_selected_point].entity ~= ent then
-			PA_funcs.attach_point( PA_selected_point, ent )
+		elseif PrecisionAlign.Points[PrecisionAlign.SelectedPoint].entity ~= ent then
+			PrecisionAlign.Functions.attach_point( PrecisionAlign.SelectedPoint, ent )
 		end
 
 	-- Lines
@@ -1746,13 +1746,13 @@ local function umsg_click_hook()
 
 		-- Alt-click will place end point
 		if alt then
-			PA_funcs.set_line( PA_selected_line, nil, point, nil, nil )
+			PrecisionAlign.Functions.set_line( PrecisionAlign.SelectedLine, nil, point, nil, nil )
 		else
-			PA_funcs.set_line( PA_selected_line, point, nil, nil, nil )
+			PrecisionAlign.Functions.set_line( PrecisionAlign.SelectedLine, point, nil, nil, nil )
 
 			-- Only auto-attach by start point, not end point
-			if PA_funcs.construct_exists( "Line", PA_selected_line ) and precision_align_lines[PA_selected_line].entity ~= ent then
-				PA_funcs.attach_line( PA_selected_line, ent )
+			if PrecisionAlign.Functions.construct_exists( "Line", PrecisionAlign.SelectedLine ) and PrecisionAlign.Lines[PrecisionAlign.SelectedLine].entity ~= ent then
+				PrecisionAlign.Functions.attach_line( PrecisionAlign.SelectedLine, ent )
 			end
 		end
 
@@ -1761,19 +1761,19 @@ local function umsg_click_hook()
 			select_next_line()
 		end
 
-		PA_funcs.set_line( PA_selected_line, point, nil, normal, nil )
+		PrecisionAlign.Functions.set_line( PrecisionAlign.SelectedLine, point, nil, normal, nil )
 		if alt then
-			if PA_activeent then
-				PA_funcs.attach_line( PA_selected_line, PA_activeent )
-			elseif precision_align_lines[PA_selected_line].entity then
-				PA_funcs.attach_line( PA_selected_line, nil )
+			if PrecisionAlign.ActiveEnt then
+				PrecisionAlign.Functions.attach_line( PrecisionAlign.SelectedLine, PrecisionAlign.ActiveEnt )
+			elseif PrecisionAlign.Lines[PrecisionAlign.SelectedLine].entity then
+				PrecisionAlign.Functions.attach_line( PrecisionAlign.SelectedLine, nil )
 			end
-		elseif precision_align_lines[PA_selected_line].entity ~= ent then
-			PA_funcs.attach_line( PA_selected_line, ent )
+		elseif PrecisionAlign.Lines[PrecisionAlign.SelectedLine].entity ~= ent then
+			PrecisionAlign.Functions.attach_line( PrecisionAlign.SelectedLine, ent )
 		end
 
 	elseif tooltype == 7 then
-		PA_funcs.set_line( PA_selected_line, nil, nil, normal, nil )
+		PrecisionAlign.Functions.set_line( PrecisionAlign.SelectedLine, nil, nil, normal, nil )
 
 	-- Planes
 	elseif tooltype == 8 then
@@ -1781,26 +1781,26 @@ local function umsg_click_hook()
 			select_next_plane()
 		end
 
-		PA_funcs.set_plane( PA_selected_plane, point, normal )
+		PrecisionAlign.Functions.set_plane( PrecisionAlign.SelectedPlane, point, normal )
 		if alt then
-			if PA_activeent then
-				PA_funcs.attach_plane( PA_selected_plane, PA_activeent )
-			elseif precision_align_planes[PA_selected_plane].entity then
-				PA_funcs.attach_plane( PA_selected_plane, nil )
+			if PrecisionAlign.ActiveEnt then
+				PrecisionAlign.Functions.attach_plane( PrecisionAlign.SelectedPlane, PrecisionAlign.ActiveEnt )
+			elseif PrecisionAlign.Planes[PrecisionAlign.SelectedPlane].entity then
+				PrecisionAlign.Functions.attach_plane( PrecisionAlign.SelectedPlane, nil )
 			end
-		elseif precision_align_planes[PA_selected_plane].entity ~= ent then
-			PA_funcs.attach_plane( PA_selected_plane, ent )
+		elseif PrecisionAlign.Planes[PrecisionAlign.SelectedPlane].entity ~= ent then
+			PrecisionAlign.Functions.attach_plane( PrecisionAlign.SelectedPlane, ent )
 		end
 
 	elseif tooltype == 9 then
-		PA_funcs.set_plane( PA_selected_plane, nil, normal )
+		PrecisionAlign.Functions.set_plane( PrecisionAlign.SelectedPlane, nil, normal )
 	end
 end
 net.Receive( PA_ .. "click", umsg_click_hook )
 
 -- Called when the server sends entity data - so the client knows which entity is selected
 local function umsg_entity_hook()
-	PA_activeent = net.ReadEntity()
+	PrecisionAlign.ActiveEnt = net.ReadEntity()
 end
 net.Receive( PA_ .. "ent", umsg_entity_hook )
 
@@ -1873,11 +1873,11 @@ local function precision_align_draw( w, h)
 	local playerpos = LocalPlayer():GetShootPos()
 
 	-- Points
-	for k, v in ipairs (precision_align_points) do
+	for k, v in ipairs (PrecisionAlign.Points) do
 		if v.visible and v.origin then
 
 			--Check if point exists
-			local point_temp = PA_funcs.point_global(k)
+			local point_temp = PrecisionAlign.Functions.point_global(k)
 			if point_temp then
 				local origin = point_temp.origin
 				local point = origin:ToScreen()
@@ -1905,11 +1905,11 @@ local function precision_align_draw( w, h)
 	end
 
 	-- Lines
-	for k, v in ipairs (precision_align_lines) do
+	for k, v in ipairs (PrecisionAlign.Lines) do
 		if v.visible and v.startpoint and v.endpoint then
 
 			--Check if line exists
-			local line_temp = PA_funcs.line_global(k)
+			local line_temp = PrecisionAlign.Functions.line_global(k)
 			if line_temp then
 				local startpoint = line_temp.startpoint
 				local endpoint = line_temp.endpoint
@@ -1984,11 +1984,11 @@ local function precision_align_draw( w, h)
 	end
 
 	-- Planes
-	for k, v in ipairs ( precision_align_planes ) do
+	for k, v in ipairs ( PrecisionAlign.Planes ) do
 		if v.visible and v.origin and v.normal then
 
 			-- Check if plane exists
-			local plane_temp = PA_funcs.plane_global(k)
+			local plane_temp = PrecisionAlign.Functions.plane_global(k)
 			if plane_temp then
 
 				local origin = plane_temp.origin

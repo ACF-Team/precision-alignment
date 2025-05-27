@@ -206,15 +206,15 @@ function DISPLAYS_TAB:Init()
 	AddMenuText( "Construct Visibility", 10, 5, self.panel_multiselect.colour_panel_1 )
 
 	self.panel_multiselect.list_points.OnRowSelected = function( Panel, Line )
-		update_visibility( Panel, precision_align_points )
+		update_visibility( Panel, PrecisionAlign.Points )
 	end
 
 	self.panel_multiselect.list_lines.OnRowSelected = function( Panel, Line )
-		update_visibility( Panel, precision_align_lines )
+		update_visibility( Panel, PrecisionAlign.Lines )
 	end
 
 	self.panel_multiselect.list_planes.OnRowSelected = function( Panel, Line )
-		update_visibility( Panel, precision_align_planes )
+		update_visibility( Panel, PrecisionAlign.Planes )
 	end
 
 	AddMenuText( "Construct Draw Sizes", 10, self:GetTall() / 2 - 10, self )
@@ -385,7 +385,7 @@ function POINTS_TAB:Init()
 		local selection = self.list_primarypoint:GetSelectedLine()
 		if not selection then return false end
 
-		local point_temp = PA_funcs.point_global( selection )
+		local point_temp = PrecisionAlign.Functions.point_global( selection )
 		local vec
 
 		if not point_temp then
@@ -393,8 +393,8 @@ function POINTS_TAB:Init()
 		else
 			vec = point_temp.origin
 			if self.checkbox_relative1:GetChecked() then
-				if IsValid(PA_activeent) then
-					vec = PA_activeent:WorldToLocal(vec)
+				if IsValid(PrecisionAlign.ActiveEnt) then
+					vec = PrecisionAlign.ActiveEnt:WorldToLocal(vec)
 				else
 					self.checkbox_relative1:SetValue(false)
 				end
@@ -435,11 +435,11 @@ function POINTS_TAB:Init()
 			if selection then
 				local vec = self.sliders_origin1:GetValues()
 
-				if self.checkbox_relative1:GetChecked() and IsValid(PA_activeent) then
-					vec = PA_activeent:LocalToWorld(vec)
+				if self.checkbox_relative1:GetChecked() and IsValid(PrecisionAlign.ActiveEnt) then
+					vec = PrecisionAlign.ActiveEnt:LocalToWorld(vec)
 				end
 
-				return PA_funcs.set_point( selection, vec )
+				return PrecisionAlign.Functions.set_point( selection, vec )
 			end
 			Warning("No selection")
 			return false
@@ -452,7 +452,7 @@ function POINTS_TAB:Init()
 		self.button_delete:SetFunction( function()
 			local selection = self.list_primarypoint:GetSelectedLine()
 			if selection then
-				return PA_funcs.delete_point(selection)
+				return PrecisionAlign.Functions.delete_point(selection)
 			end
 			Warning("No selection")
 			return false
@@ -463,7 +463,7 @@ function POINTS_TAB:Init()
 		self.button_deleteall:SetSize(80, 25)
 		self.button_deleteall:SetText( "Delete All" )
 		self.button_deleteall:SetFunction( function()
-			return PA_funcs.delete_points()
+			return PrecisionAlign.Functions.delete_points()
 		end )
 
 	self.sliders_origin1 = vgui.Create( "PA_XYZ_Sliders", self )
@@ -483,7 +483,7 @@ function POINTS_TAB:Init()
 		local selection = self.list_secondarypoint:GetSelectedLine()
 		if not selection then return false end
 
-		local point_temp = PA_funcs.point_global( selection )
+		local point_temp = PrecisionAlign.Functions.point_global( selection )
 		local vec
 
 		if not point_temp then
@@ -491,8 +491,8 @@ function POINTS_TAB:Init()
 		else
 			vec = point_temp.origin
 			if self.checkbox_relative2:GetChecked() then
-				if IsValid(PA_activeent) then
-					vec = PA_activeent:WorldToLocal(vec)
+				if IsValid(PrecisionAlign.ActiveEnt) then
+					vec = PrecisionAlign.ActiveEnt:WorldToLocal(vec)
 				else
 					self.checkbox_relative2:SetValue(false)
 				end
@@ -628,8 +628,8 @@ function POINTS_TAB:Init()
 			local selection = self.functions_list_functionpoints:GetSelected()
 			if #selection == 1 then
 				local pointID = selection[1]:GetID()
-				if PA_funcs.construct_exists( "Point", pointID ) then
-					local point = PA_funcs.point_global(pointID)
+				if PrecisionAlign.Functions.construct_exists( "Point", pointID ) then
+					local point = PrecisionAlign.Functions.point_global(pointID)
 					self.sliders_origin1:SetValues(point.origin)
 					return true
 				end
@@ -647,7 +647,7 @@ function POINTS_TAB:Init()
 			local selection_table = {}
 			selection_table = self.functions_list_functionpoints:GetSelected()
 			if #selection_table > 1 then
-				local vec = PA_funcs.point_function_average(selection_table)
+				local vec = PrecisionAlign.Functions.point_function_average(selection_table)
 				if vec then
 					self.sliders_origin1:SetValues( vec )
 					return true
@@ -678,15 +678,15 @@ function POINTS_TAB:Init()
 				return false
 			end
 
-			local point1 = PA_funcs.point_global(selected_point1)
-			local point2 = PA_funcs.point_global(selected_point2)
+			local point1 = PrecisionAlign.Functions.point_global(selected_point1)
+			local point2 = PrecisionAlign.Functions.point_global(selected_point2)
 
 			if not point1 or not point2 then
 				Warning("Points not correctly defined")
 				return false
 			end
 
-			if not PA_funcs.move_entity(point1.origin, point2.origin, PA_activeent) then return false end
+			if not PrecisionAlign.Functions.move_entity(point1.origin, point2.origin, PrecisionAlign.ActiveEnt) then return false end
 		end )
 
 end
@@ -730,7 +730,7 @@ function LINES_TAB:Init()
 		local selection = self.list_primary:GetSelectedLine()
 		if not selection then return false end
 
-		local line_temp = PA_funcs.line_global( selection )
+		local line_temp = PrecisionAlign.Functions.line_global( selection )
 		local startpoint, endpoint, direction, length, angle
 
 		if not line_temp then
@@ -743,9 +743,9 @@ function LINES_TAB:Init()
 			startpoint = line_temp.startpoint
 			endpoint = line_temp.endpoint
 			if self.checkbox_relative:GetChecked() then
-				if IsValid(PA_activeent) then
-					startpoint = PA_activeent:WorldToLocal(startpoint)
-					endpoint = PA_activeent:WorldToLocal(endpoint)
+				if IsValid(PrecisionAlign.ActiveEnt) then
+					startpoint = PrecisionAlign.ActiveEnt:WorldToLocal(startpoint)
+					endpoint = PrecisionAlign.ActiveEnt:WorldToLocal(endpoint)
 				else
 					self.checkbox_relative:SetValue(false)
 				end
@@ -792,12 +792,12 @@ function LINES_TAB:Init()
 					return false
 				end
 
-				if self.checkbox_relative:GetChecked() and IsValid(PA_activeent) then
-					startpoint = PA_activeent:LocalToWorld(startpoint)
-					endpoint = PA_activeent:LocalToWorld(endpoint)
+				if self.checkbox_relative:GetChecked() and IsValid(PrecisionAlign.ActiveEnt) then
+					startpoint = PrecisionAlign.ActiveEnt:LocalToWorld(startpoint)
+					endpoint = PrecisionAlign.ActiveEnt:LocalToWorld(endpoint)
 				end
 
-				return PA_funcs.set_line( selection, startpoint, endpoint )
+				return PrecisionAlign.Functions.set_line( selection, startpoint, endpoint )
 			end
 			Warning("No selection")
 			return false
@@ -810,7 +810,7 @@ function LINES_TAB:Init()
 		self.button_delete:SetFunction( function()
 			local selection = self.list_primary:GetSelectedLine()
 			if selection then
-				return PA_funcs.delete_line(selection)
+				return PrecisionAlign.Functions.delete_line(selection)
 			end
 			Warning("No selection")
 			return false
@@ -821,7 +821,7 @@ function LINES_TAB:Init()
 		self.button_deleteall:SetSize(80, 25)
 		self.button_deleteall:SetText( "Delete All" )
 		self.button_deleteall:SetFunction( function()
-			return PA_funcs.delete_lines()
+			return PrecisionAlign.Functions.delete_lines()
 		end )
 
 	self.checkbox_relative = vgui.Create( "DCheckBoxLabel", self )
@@ -993,8 +993,8 @@ function LINES_TAB:Init()
 		local selection = self.functions_list_functionlines:GetSelected()
 		if #selection == 1 then
 			local lineID = selection[1]:GetID()
-			if PA_funcs.construct_exists( "Line", lineID ) then
-				local line = PA_funcs.line_global(lineID)
+			if PrecisionAlign.Functions.construct_exists( "Line", lineID ) then
+				local line = PrecisionAlign.Functions.line_global(lineID)
 				return line
 			end
 		end
@@ -1080,7 +1080,7 @@ function LINES_TAB:Init()
 			local selection = self.functions_list_functionlines:GetSelected()
 			if #selection == 2 then
 				local lineID1, lineID2 = selection[1]:GetID(), selection[2]:GetID()
-				local dir = PA_funcs.line_function_perpendicular( lineID1, lineID2 )
+				local dir = PrecisionAlign.Functions.line_function_perpendicular( lineID1, lineID2 )
 				if dir then
 					self.sliders_direction:SetValues(dir)
 					return update_sliders_direction()
@@ -1107,8 +1107,8 @@ function LINES_TAB:Init()
 
 			for k, v in pairs (selection) do
 				lineID = v:GetID()
-				if PA_funcs.construct_exists( "Line", lineID ) then
-					line = PA_funcs.line_global( lineID )
+				if PrecisionAlign.Functions.construct_exists( "Line", lineID ) then
+					line = PrecisionAlign.Functions.line_global( lineID )
 					totalvec = totalvec + line.endpoint - line.startpoint
 				end
 			end
@@ -1130,13 +1130,13 @@ function LINES_TAB:Init()
 				return false
 			end
 
-			if not PA_funcs.construct_exists( "Line", selection ) then
+			if not PrecisionAlign.Functions.construct_exists( "Line", selection ) then
 				Warning("Line not correctly defined")
 				return false
 			end
 
-			local line = PA_funcs.line_global(selection)
-			if not PA_funcs.move_entity(line.startpoint, line.endpoint, PA_activeent) then return false end
+			local line = PrecisionAlign.Functions.line_global(selection)
+			if not PrecisionAlign.Functions.move_entity(line.startpoint, line.endpoint, PrecisionAlign.ActiveEnt) then return false end
 		end )
 end
 
@@ -1183,7 +1183,7 @@ function PLANES_TAB:Init()
 		local selection = self.list_primary:GetSelectedLine()
 		if not selection then return false end
 
-		local plane_temp = PA_funcs.plane_global( selection )
+		local plane_temp = PrecisionAlign.Functions.plane_global( selection )
 		local origin, normal, angle
 
 		if not plane_temp then
@@ -1192,9 +1192,9 @@ function PLANES_TAB:Init()
 			angle = Angle(0,0,0)
 		else
 			if self.checkbox_relative:GetChecked() then
-				if IsValid(PA_activeent) then
-					plane_temp.origin = PA_activeent:WorldToLocal(plane_temp.origin)
-					plane_temp.normal = ( PA_activeent:WorldToLocal(PA_activeent:GetPos() + plane_temp.normal) ):GetNormal()
+				if IsValid(PrecisionAlign.ActiveEnt) then
+					plane_temp.origin = PrecisionAlign.ActiveEnt:WorldToLocal(plane_temp.origin)
+					plane_temp.normal = ( PrecisionAlign.ActiveEnt:WorldToLocal(PrecisionAlign.ActiveEnt:GetPos() + plane_temp.normal) ):GetNormal()
 				else
 					self.checkbox_relative:SetValue(false)
 				end
@@ -1236,12 +1236,12 @@ function PLANES_TAB:Init()
 				local origin = self.sliders_origin:GetValues()
 				local normal = self.sliders_normal:GetValues()
 
-				if self.checkbox_relative:GetChecked() and IsValid(PA_activeent) then
-					origin = PA_activeent:LocalToWorld(origin)
-					normal = ( PA_activeent:LocalToWorld(normal) - PA_activeent:GetPos()):GetNormal()
+				if self.checkbox_relative:GetChecked() and IsValid(PrecisionAlign.ActiveEnt) then
+					origin = PrecisionAlign.ActiveEnt:LocalToWorld(origin)
+					normal = ( PrecisionAlign.ActiveEnt:LocalToWorld(normal) - PrecisionAlign.ActiveEnt:GetPos()):GetNormal()
 				end
 
-				return PA_funcs.set_plane( selection, origin, normal )
+				return PrecisionAlign.Functions.set_plane( selection, origin, normal )
 			end
 			Warning("No selection")
 			return false
@@ -1254,7 +1254,7 @@ function PLANES_TAB:Init()
 		self.button_delete:SetFunction( function()
 			local selection = self.list_primary:GetSelectedLine()
 			if selection then
-				return PA_funcs.delete_plane(selection)
+				return PrecisionAlign.Functions.delete_plane(selection)
 			end
 			Warning("No selection")
 			return false
@@ -1265,7 +1265,7 @@ function PLANES_TAB:Init()
 		self.button_deleteall:SetSize(80, 25)
 		self.button_deleteall:SetText( "Delete All" )
 		self.button_deleteall:SetFunction( function()
-			return PA_funcs.delete_planes()
+			return PrecisionAlign.Functions.delete_planes()
 		end )
 
 	self.checkbox_relative = vgui.Create( "DCheckBoxLabel", self )
@@ -1343,8 +1343,8 @@ function PLANES_TAB:Init()
 		local selection = self.functions_list_functionplanes:GetSelected()
 		if #selection == 1 then
 			local planeID = selection[1]:GetID()
-			if PA_funcs.construct_exists( "Plane", planeID ) then
-				local plane = PA_funcs.plane_global(planeID)
+			if PrecisionAlign.Functions.construct_exists( "Plane", planeID ) then
+				local plane = PrecisionAlign.Functions.plane_global(planeID)
 				return plane
 			end
 		end
@@ -1404,7 +1404,7 @@ function PLANES_TAB:Init()
 			local selection = self.functions_list_functionplanes:GetSelected()
 			if #selection == 2 then
 				local planeID1, planeID2 = selection[1]:GetID(), selection[2]:GetID()
-				local normal = PA_funcs.plane_function_perpendicular( planeID1, planeID2 )
+				local normal = PrecisionAlign.Functions.plane_function_perpendicular( planeID1, planeID2 )
 				if normal then
 					self.sliders_normal:SetValues(normal)
 					return update_sliders_normal()
@@ -1462,19 +1462,19 @@ function MOVE_TAB:Init()
 	local function rotate_constructs( selection_constructs, pivot, axis, degrees )
 		if pivot then
 			for k, v in pairs ( selection_constructs.points ) do
-				local point = PA_funcs.point_global(v)
+				local point = PrecisionAlign.Functions.point_global(v)
 
 				local vec = point.origin - pivot
 				local ang = vec:Angle()
 				ang:RotateAroundAxis( axis, degrees )
 
 				vec = ang:Forward() * vec:Length()
-				PA_funcs.set_point( v, pivot + vec )
+				PrecisionAlign.Functions.set_point( v, pivot + vec )
 			end
 		end
 
 		for k, v in pairs ( selection_constructs.lines ) do
-			local line = PA_funcs.line_global(v)
+			local line = PrecisionAlign.Functions.line_global(v)
 			local vec1 = Vector(0,0,0)
 			local pivot_temp = pivot
 
@@ -1492,11 +1492,11 @@ function MOVE_TAB:Init()
 			ang2:RotateAroundAxis( axis, degrees )
 			vec2 = ang2:Forward() * vec2:Length()
 
-			PA_funcs.set_line( v, pivot_temp + vec1, pivot_temp + vec2 )
+			PrecisionAlign.Functions.set_line( v, pivot_temp + vec1, pivot_temp + vec2 )
 		end
 
 		for k, v in pairs ( selection_constructs.planes ) do
-			local plane = PA_funcs.plane_global(v)
+			local plane = PrecisionAlign.Functions.plane_global(v)
 			local vec1 = Vector(0,0,0)
 			local pivot_temp = pivot
 
@@ -1514,7 +1514,7 @@ function MOVE_TAB:Init()
 			ang2:RotateAroundAxis( axis, degrees )
 			vec2 = ang2:Forward()
 
-			PA_funcs.set_plane( v, pivot_temp + vec1, vec2 )
+			PrecisionAlign.Functions.set_plane( v, pivot_temp + vec1, vec2 )
 		end
 
 		return true
@@ -1533,7 +1533,7 @@ function MOVE_TAB:Init()
 				return false
 			end
 
-			if not PA_funcs.construct_exists( "Line", selected_line ) then
+			if not PrecisionAlign.Functions.construct_exists( "Line", selected_line ) then
 				Warning("Line not correctly defined")
 				return false
 			end
@@ -1549,14 +1549,14 @@ function MOVE_TAB:Init()
 			local degrees = self.slider_rotate_axis:GetValue()
 			if degrees == 0 then return false end
 
-			local line = PA_funcs.line_global(selected_line)
+			local line = PrecisionAlign.Functions.line_global(selected_line)
 			local axis = ( line.endpoint - line.startpoint ):GetNormal()
 
 			-- Check pivot selection
 			local pivot_selection = self.list_pivotpoint:GetSelectedLine()
 			local pivot = line.startpoint
-			if pivot_selection and PA_funcs.construct_exists( "Point", pivot_selection ) then
-				pivot = PA_funcs.point_global( pivot_selection ).origin
+			if pivot_selection and PrecisionAlign.Functions.construct_exists( "Point", pivot_selection ) then
+				pivot = PrecisionAlign.Functions.point_global( pivot_selection ).origin
 			end
 
 			return rotate_constructs( selection_constructs, pivot, axis, degrees )
@@ -1626,9 +1626,9 @@ function MOVE_TAB:Init()
 					Warning( "Select Point 1" ) return false
 				elseif not point2 then
 					Warning( "Select Point 2" ) return false
-				elseif not PA_funcs.construct_exists( "Point", point1 ) then
+				elseif not PrecisionAlign.Functions.construct_exists( "Point", point1 ) then
 					Warning( "Point " .. tostring(point1) .. " not defined" ) return false
-				elseif not PA_funcs.construct_exists( "Point", point2 ) then
+				elseif not PrecisionAlign.Functions.construct_exists( "Point", point2 ) then
 					Warning( "Point " .. tostring(point2) .. " not defined" ) return false
 				end
 				selection_primary = { point1, point2 }
@@ -1636,7 +1636,7 @@ function MOVE_TAB:Init()
 				local line = self.list_line_1:GetSelectedLine()
 				if not line then
 					Warning( "Select Line 1" ) return false
-				elseif not PA_funcs.construct_exists( "Line", line ) then
+				elseif not PrecisionAlign.Functions.construct_exists( "Line", line ) then
 					Warning( "Line " .. tostring(line) .. " not defined" ) return false
 				end
 				selection_primary = { line }
@@ -1644,7 +1644,7 @@ function MOVE_TAB:Init()
 				local plane = self.list_plane_1:GetSelectedLine()
 				if not plane then
 					Warning( "Select Plane 1" ) return false
-				elseif not PA_funcs.construct_exists( "Plane", plane ) then
+				elseif not PrecisionAlign.Functions.construct_exists( "Plane", plane ) then
 					Warning( "Plane " .. tostring(plane) .. " not defined" ) return false
 				end
 				selection_primary = { plane }
@@ -1667,18 +1667,18 @@ function MOVE_TAB:Init()
 
 	local function move_constructs( selection_constructs, vec )
 		for k, v in pairs ( selection_constructs.points ) do
-			local point = PA_funcs.point_global(v)
-			PA_funcs.set_point( v, point.origin + vec )
+			local point = PrecisionAlign.Functions.point_global(v)
+			PrecisionAlign.Functions.set_point( v, point.origin + vec )
 		end
 
 		for k, v in pairs ( selection_constructs.lines ) do
-			local line = PA_funcs.line_global(v)
-			PA_funcs.set_line( v, line.startpoint + vec, line.endpoint + vec )
+			local line = PrecisionAlign.Functions.line_global(v)
+			PrecisionAlign.Functions.set_line( v, line.startpoint + vec, line.endpoint + vec )
 		end
 
 		for k, v in pairs ( selection_constructs.planes ) do
-			local plane = PA_funcs.plane_global(v)
-			PA_funcs.set_plane( v, plane.origin + vec )
+			local plane = PrecisionAlign.Functions.plane_global(v)
+			PrecisionAlign.Functions.set_plane( v, plane.origin + vec )
 		end
 
 		return true
@@ -1689,8 +1689,8 @@ function MOVE_TAB:Init()
 		self.button_move_points:SetText( "Move by 2 Points" )
 		self.button_move_points.selections = "Point"
 		self.button_move_points.func = function( selection_primary, selection_constructs )
-			local point1 = PA_funcs.point_global( selection_primary[1] )
-			local point2 = PA_funcs.point_global( selection_primary[2] )
+			local point1 = PrecisionAlign.Functions.point_global( selection_primary[1] )
+			local point2 = PrecisionAlign.Functions.point_global( selection_primary[2] )
 
 			local vec = point2.origin - point1.origin
 			return move_constructs( selection_constructs, vec )
@@ -1701,7 +1701,7 @@ function MOVE_TAB:Init()
 		self.button_move_line:SetText( "Move by Line" )
 		self.button_move_line.selections = "Line"
 		self.button_move_line.func = function( selection_primary, selection_constructs )
-			local line = PA_funcs.line_global( selection_primary[1] )
+			local line = PrecisionAlign.Functions.line_global( selection_primary[1] )
 
 			local vec = line.endpoint - line.startpoint
 			return move_constructs( selection_constructs, vec )
@@ -1712,22 +1712,22 @@ function MOVE_TAB:Init()
 		self.button_move_mirror:SetText( "Mirror Across Plane" )
 		self.button_move_mirror.selections = "Plane"
 		self.button_move_mirror.func = function( selection_primary, selection_constructs )
-			local planePrimary = PA_funcs.plane_global( selection_primary[1] )
+			local planePrimary = PrecisionAlign.Functions.plane_global( selection_primary[1] )
 			local origin, normal = planePrimary.origin, planePrimary.normal
 
 			for k, v in pairs ( selection_constructs.points ) do
-				local point = PA_funcs.point_global(v)
-				PA_funcs.set_point( v, PA_funcs.point_mirror( point.origin, origin, normal ) )
+				local point = PrecisionAlign.Functions.point_global(v)
+				PrecisionAlign.Functions.set_point( v, PrecisionAlign.Functions.point_mirror( point.origin, origin, normal ) )
 			end
 
 			for k, v in pairs ( selection_constructs.lines ) do
-				local line = PA_funcs.line_global(v)
-				PA_funcs.set_line( v, PA_funcs.point_mirror( line.startpoint, origin, normal ), PA_funcs.point_mirror( line.endpoint, origin, normal ) )
+				local line = PrecisionAlign.Functions.line_global(v)
+				PrecisionAlign.Functions.set_line( v, PrecisionAlign.Functions.point_mirror( line.startpoint, origin, normal ), PrecisionAlign.Functions.point_mirror( line.endpoint, origin, normal ) )
 			end
 
 			for k, v in pairs ( selection_constructs.planes ) do
-				local plane = PA_funcs.plane_global(v)
-				PA_funcs.set_plane( v, PA_funcs.point_mirror( plane.origin, origin, normal ), PA_funcs.direction_mirror( plane.normal, normal ) )
+				local plane = PrecisionAlign.Functions.plane_global(v)
+				PrecisionAlign.Functions.set_plane( v, PrecisionAlign.Functions.point_mirror( plane.origin, origin, normal ), PrecisionAlign.Functions.direction_mirror( plane.normal, normal ) )
 			end
 
 			return true
@@ -1778,8 +1778,8 @@ function MOVE_TAB:Init()
 			-- Check pivot selection
 			local pivot_selection = self.list_pivotpoint:GetSelectedLine()
 			local pivot
-			if pivot_selection and PA_funcs.construct_exists( "Point", pivot_selection ) then
-				pivot = PA_funcs.point_global( pivot_selection ).origin
+			if pivot_selection and PrecisionAlign.Functions.construct_exists( "Point", pivot_selection ) then
+				pivot = PrecisionAlign.Functions.point_global( pivot_selection ).origin
 			end
 
 			-- Check construct selections
@@ -1965,7 +1965,7 @@ function FUNCTIONS_TAB:Init()
 					-- Check the selections point to valid constructs
 					for l, w in pairs (selection) do
 						local ID = w:GetID()
-						if not PA_funcs.construct_exists( string_table[k], ID ) then
+						if not PrecisionAlign.Functions.construct_exists( string_table[k], ID ) then
 							Warning( string_table[k] .. " " .. tostring(ID) .. " has not been defined" )
 							return false
 						end
@@ -1989,8 +1989,8 @@ function FUNCTIONS_TAB:Init()
 		self.button_point_linestart.description = "Sets a point at the start of a line"
 		self.button_point_linestart.selections = { "Point", 0, 1, 0 }
 		self.button_point_linestart.func = function( selection_primary, selection_secondary )
-			local origin = PA_funcs.line_global( selection_secondary[1] ).startpoint
-			return PA_funcs.set_point( selection_primary, origin )
+			local origin = PrecisionAlign.Functions.line_global( selection_secondary[1] ).startpoint
+			return PrecisionAlign.Functions.set_point( selection_primary, origin )
 		end
 
 	self.button_point_lineend = vgui.Create( "PA_Function_Button_2", self )
@@ -1999,8 +1999,8 @@ function FUNCTIONS_TAB:Init()
 		self.button_point_lineend.description = "Sets a point at the end of a line"
 		self.button_point_lineend.selections = { "Point", 0, 1, 0 }
 		self.button_point_lineend.func = function( selection_primary, selection_secondary )
-			local origin = PA_funcs.line_global( selection_secondary[1] ).endpoint
-			return PA_funcs.set_point( selection_primary, origin )
+			local origin = PrecisionAlign.Functions.line_global( selection_secondary[1] ).endpoint
+			return PrecisionAlign.Functions.set_point( selection_primary, origin )
 		end
 
 	self.button_point_planeorigin = vgui.Create( "PA_Function_Button_2", self )
@@ -2009,8 +2009,8 @@ function FUNCTIONS_TAB:Init()
 		self.button_point_planeorigin.description = "Sets a point at the origin of a plane"
 		self.button_point_planeorigin.selections = { "Point", 0, 0, 1 }
 		self.button_point_planeorigin.func = function( selection_primary, selection_secondary )
-			local origin = PA_funcs.plane_global( selection_secondary[1] ).origin
-			return PA_funcs.set_point( selection_primary, origin )
+			local origin = PrecisionAlign.Functions.plane_global( selection_secondary[1] ).origin
+			return PrecisionAlign.Functions.set_point( selection_primary, origin )
 		end
 
 	self.button_point_threeplanes = vgui.Create( "PA_Function_Button_2", self )
@@ -2019,9 +2019,9 @@ function FUNCTIONS_TAB:Init()
 		self.button_point_threeplanes.description = "Finds the point where three planes intersect"
 		self.button_point_threeplanes.selections = { "Point", 0, 0, 3 }
 		self.button_point_threeplanes.func = function( selection_primary, selection_secondary )
-			local origin = PA_funcs.point_3plane_intersection( selection_secondary[1], selection_secondary[2], selection_secondary[3] )
+			local origin = PrecisionAlign.Functions.point_3plane_intersection( selection_secondary[1], selection_secondary[2], selection_secondary[3] )
 			if origin then
-				return PA_funcs.set_point( selection_primary, origin )
+				return PrecisionAlign.Functions.set_point( selection_primary, origin )
 			end
 			return false
 		end
@@ -2032,9 +2032,9 @@ function FUNCTIONS_TAB:Init()
 		self.button_point_twolines.description = "Sets a point where two lines intersect\n\nIf the two lines do not meet, the point will be set halfway between where the two lines are closest"
 		self.button_point_twolines.selections = { "Point", 0, 2, 0 }
 		self.button_point_twolines.func = function( selection_primary, selection_secondary )
-			local origin = PA_funcs.point_2line_intersection( selection_secondary[1], selection_secondary[2] )
+			local origin = PrecisionAlign.Functions.point_2line_intersection( selection_secondary[1], selection_secondary[2] )
 			if origin then
-				return PA_funcs.set_point( selection_primary, origin )
+				return PrecisionAlign.Functions.set_point( selection_primary, origin )
 			end
 			return false
 		end
@@ -2045,9 +2045,9 @@ function FUNCTIONS_TAB:Init()
 		self.button_point_lineplane.description = "Sets a point where a line intersects a plane"
 		self.button_point_lineplane.selections = { "Point", 0, 1, 1 }
 		self.button_point_lineplane.func = function( selection_primary, selection_secondary )
-			local origin = PA_funcs.point_lineplane_intersection( selection_secondary[1], selection_secondary[2] )
+			local origin = PrecisionAlign.Functions.point_lineplane_intersection( selection_secondary[1], selection_secondary[2] )
 			if origin then
-				return PA_funcs.set_point( selection_primary, origin )
+				return PrecisionAlign.Functions.set_point( selection_primary, origin )
 			end
 			return false
 		end
@@ -2058,9 +2058,9 @@ function FUNCTIONS_TAB:Init()
 		self.button_point_lineprojection.description = "Finds the point on a line closest to the selected point"
 		self.button_point_lineprojection.selections = { "Point", 1, 1, 0 }
 		self.button_point_lineprojection.func = function( selection_primary, selection_secondary )
-			local origin = PA_funcs.point_line_projection( selection_secondary[1], selection_secondary[2] )
+			local origin = PrecisionAlign.Functions.point_line_projection( selection_secondary[1], selection_secondary[2] )
 			if origin then
-				return PA_funcs.set_point( selection_primary, origin )
+				return PrecisionAlign.Functions.set_point( selection_primary, origin )
 			end
 			return false
 		end
@@ -2071,9 +2071,9 @@ function FUNCTIONS_TAB:Init()
 		self.button_point_planeprojection.description = "Finds the point on a plane closest to the selected point"
 		self.button_point_planeprojection.selections = { "Point", 1, 0, 1 }
 		self.button_point_planeprojection.func = function( selection_primary, selection_secondary )
-			local origin = PA_funcs.point_plane_projection( selection_secondary[1], selection_secondary[2] )
+			local origin = PrecisionAlign.Functions.point_plane_projection( selection_secondary[1], selection_secondary[2] )
 			if origin then
-				return PA_funcs.set_point( selection_primary, origin )
+				return PrecisionAlign.Functions.set_point( selection_primary, origin )
 			end
 			return false
 		end
@@ -2086,8 +2086,8 @@ function FUNCTIONS_TAB:Init()
 		self.button_line_point_startpoint.description = "Sets the startpoint of a line at selected point"
 		self.button_line_point_startpoint.selections = { "Line", 1, 0, 0 }
 		self.button_line_point_startpoint.func = function( selection_primary, selection_secondary )
-			local startpoint = PA_funcs.point_global( selection_secondary[1] ).origin
-			return PA_funcs.set_line( selection_primary, startpoint )
+			local startpoint = PrecisionAlign.Functions.point_global( selection_secondary[1] ).origin
+			return PrecisionAlign.Functions.set_line( selection_primary, startpoint )
 		end
 
 	self.button_line_point_endpoint = vgui.Create( "PA_Function_Button_2", self )
@@ -2096,8 +2096,8 @@ function FUNCTIONS_TAB:Init()
 		self.button_line_point_endpoint.description = "Sets the endpoint of a line at the selected point"
 		self.button_line_point_endpoint.selections = { "Line", 1, 0, 0 }
 		self.button_line_point_endpoint.func = function( selection_primary, selection_secondary )
-			local endpoint = PA_funcs.point_global( selection_secondary[1] ).origin
-			return PA_funcs.set_line( selection_primary, nil, endpoint )
+			local endpoint = PrecisionAlign.Functions.point_global( selection_secondary[1] ).origin
+			return PrecisionAlign.Functions.set_line( selection_primary, nil, endpoint )
 		end
 
 	self.button_line_move_startpoint = vgui.Create( "PA_Function_Button_2", self )
@@ -2106,13 +2106,13 @@ function FUNCTIONS_TAB:Init()
 		self.button_line_move_startpoint.description = "Position an existing line so that its start point moved to the selected point. This will maintain the direction and length of the line"
 		self.button_line_move_startpoint.selections = { "Line", 1, 0, 0 }
 		self.button_line_move_startpoint.func = function( selection_primary, selection_secondary )
-			local origin = PA_funcs.point_global( selection_secondary[1] ).origin
+			local origin = PrecisionAlign.Functions.point_global( selection_secondary[1] ).origin
 
-			if PA_funcs.construct_exists( "Line", selection_primary ) then
-				local startpoint = PA_funcs.line_global( selection_primary ).startpoint
-				local endpoint = PA_funcs.line_global( selection_primary ).endpoint
+			if PrecisionAlign.Functions.construct_exists( "Line", selection_primary ) then
+				local startpoint = PrecisionAlign.Functions.line_global( selection_primary ).startpoint
+				local endpoint = PrecisionAlign.Functions.line_global( selection_primary ).endpoint
 
-				return PA_funcs.set_line( selection_primary, origin, origin + endpoint - startpoint )
+				return PrecisionAlign.Functions.set_line( selection_primary, origin, origin + endpoint - startpoint )
 			else
 				Warning( "Line not defined" )
 			end
@@ -2125,9 +2125,9 @@ function FUNCTIONS_TAB:Init()
 		self.button_line_2points.description = "Sets a line with start/end determined by the two selected points"
 		self.button_line_2points.selections = { "Line", 2, 0, 0 }
 		self.button_line_2points.func = function( selection_primary, selection_secondary )
-			local startpoint = PA_funcs.point_global( selection_secondary[1] ).origin
-			local endpoint = PA_funcs.point_global( selection_secondary[2] ).origin
-			return PA_funcs.set_line( selection_primary, startpoint, endpoint )
+			local startpoint = PrecisionAlign.Functions.point_global( selection_secondary[1] ).origin
+			local endpoint = PrecisionAlign.Functions.point_global( selection_secondary[2] ).origin
+			return PrecisionAlign.Functions.set_line( selection_primary, startpoint, endpoint )
 		end
 
 	self.button_line_2planes = vgui.Create( "PA_Function_Button_2", self )
@@ -2136,9 +2136,9 @@ function FUNCTIONS_TAB:Init()
 		self.button_line_2planes.description = "Sets a line at the intersection of two planes\n\nThe start point will be set halfway between the plane origins"
 		self.button_line_2planes.selections = { "Line", 0, 0, 2 }
 		self.button_line_2planes.func = function( selection_primary, selection_secondary )
-			local line = PA_funcs.line_2plane_intersection( selection_secondary[1], selection_secondary[2] )
+			local line = PrecisionAlign.Functions.line_2plane_intersection( selection_secondary[1], selection_secondary[2] )
 			if line then
-				return PA_funcs.set_line( selection_primary, line.startpoint, nil, line.direction )
+				return PrecisionAlign.Functions.set_line( selection_primary, line.startpoint, nil, line.direction )
 			end
 			return false
 		end
@@ -2149,8 +2149,8 @@ function FUNCTIONS_TAB:Init()
 		self.button_line_plane.description = "Sets a line with startpoint/direction determined by the selected plane"
 		self.button_line_plane.selections = { "Line", 0, 0, 1 }
 		self.button_line_plane.func = function( selection_primary, selection_secondary )
-			local plane = PA_funcs.plane_global( selection_secondary[1] )
-			return PA_funcs.set_line( selection_primary, plane.origin, nil, plane.normal )
+			local plane = PrecisionAlign.Functions.plane_global( selection_secondary[1] )
+			return PrecisionAlign.Functions.set_line( selection_primary, plane.origin, nil, plane.normal )
 		end
 
 	self.button_line_plane_direction = vgui.Create( "PA_Function_Button_2", self )
@@ -2159,8 +2159,8 @@ function FUNCTIONS_TAB:Init()
 		self.button_line_plane_direction.description = "Sets a line's direction determined by the direction of the selected plane"
 		self.button_line_plane_direction.selections = { "Line", 0, 0, 1 }
 		self.button_line_plane_direction.func = function( selection_primary, selection_secondary )
-			local plane = PA_funcs.plane_global( selection_secondary[1] )
-			return PA_funcs.set_line( selection_primary, nil, nil, plane.normal )
+			local plane = PrecisionAlign.Functions.plane_global( selection_secondary[1] )
+			return PrecisionAlign.Functions.set_line( selection_primary, nil, nil, plane.normal )
 		end
 
 	self.button_line_plane_projection = vgui.Create( "PA_Function_Button_2", self )
@@ -2169,9 +2169,9 @@ function FUNCTIONS_TAB:Init()
 		self.button_line_plane_projection.description = "Finds the projection of a line on a plane"
 		self.button_line_plane_projection.selections = { "Line", 0, 1, 1 }
 		self.button_line_plane_projection.func = function( selection_primary, selection_secondary )
-			local line = PA_funcs.line_plane_projection( selection_secondary[1], selection_secondary[2] )
+			local line = PrecisionAlign.Functions.line_plane_projection( selection_secondary[1], selection_secondary[2] )
 			if line then
-				return PA_funcs.set_line( selection_primary, line.startpoint, line.endpoint )
+				return PrecisionAlign.Functions.set_line( selection_primary, line.startpoint, line.endpoint )
 			end
 			return false
 		end
@@ -2184,8 +2184,8 @@ function FUNCTIONS_TAB:Init()
 		self.button_plane_point_origin.description = "Sets a plane's origin at the selected point"
 		self.button_plane_point_origin.selections = { "Plane", 1, 0, 0 }
 		self.button_plane_point_origin.func = function( selection_primary, selection_secondary )
-			local origin = PA_funcs.point_global( selection_secondary[1] ).origin
-			return PA_funcs.set_plane( selection_primary, origin )
+			local origin = PrecisionAlign.Functions.point_global( selection_secondary[1] ).origin
+			return PrecisionAlign.Functions.set_plane( selection_primary, origin )
 		end
 
 	self.button_plane_3points = vgui.Create( "PA_Function_Button_2", self )
@@ -2194,9 +2194,9 @@ function FUNCTIONS_TAB:Init()
 		self.button_plane_3points.description = "Sets a plane determined by the 3 selected points\n\nThe plane's origin will be set at the centre of the 3 points"
 		self.button_plane_3points.selections = { "Plane", 3, 0, 0 }
 		self.button_plane_3points.func = function( selection_primary, selection_secondary )
-			local plane_temp = PA_funcs.plane_3points( selection_secondary[1], selection_secondary[2], selection_secondary[3] )
+			local plane_temp = PrecisionAlign.Functions.plane_3points( selection_secondary[1], selection_secondary[2], selection_secondary[3] )
 			if plane_temp then
-				return PA_funcs.set_plane( selection_primary, plane_temp.origin, plane_temp.direction )
+				return PrecisionAlign.Functions.set_plane( selection_primary, plane_temp.origin, plane_temp.direction )
 			end
 			return false
 		end
@@ -2207,9 +2207,9 @@ function FUNCTIONS_TAB:Init()
 		self.button_plane_line.description = "Sets a plane with origin/direction determined by the selected line"
 		self.button_plane_line.selections = { "Plane", 0, 1, 0 }
 		self.button_plane_line.func = function( selection_primary, selection_secondary )
-			local line = PA_funcs.line_global( selection_secondary[1] )
+			local line = PrecisionAlign.Functions.line_global( selection_secondary[1] )
 			local direction = (line.endpoint - line.startpoint):GetNormal()
-			return PA_funcs.set_plane( selection_primary, line.startpoint, direction )
+			return PrecisionAlign.Functions.set_plane( selection_primary, line.startpoint, direction )
 		end
 
 	self.button_plane_line_direction = vgui.Create( "PA_Function_Button_2", self )
@@ -2218,9 +2218,9 @@ function FUNCTIONS_TAB:Init()
 		self.button_plane_line_direction.description = "Sets a plane's direction determined by the direction of the selected line"
 		self.button_plane_line_direction.selections = { "Plane", 0, 1, 0 }
 		self.button_plane_line_direction.func = function( selection_primary, selection_secondary )
-			local line = PA_funcs.line_global( selection_secondary[1] )
+			local line = PrecisionAlign.Functions.line_global( selection_secondary[1] )
 			local direction = (line.endpoint - line.startpoint):GetNormal()
-			return PA_funcs.set_plane( selection_primary, nil, direction )
+			return PrecisionAlign.Functions.set_plane( selection_primary, nil, direction )
 		end
 
 	self.button_plane_2lines = vgui.Create( "PA_Function_Button_2", self )
@@ -2229,10 +2229,10 @@ function FUNCTIONS_TAB:Init()
 		self.button_plane_2lines.description = "Sets a plane determined by the 2 selected lines\n\nThe plane's origin will be set halfway between the line startpoints"
 		self.button_plane_2lines.selections = { "Plane", 0, 2, 0 }
 		self.button_plane_2lines.func = function( selection_primary, selection_secondary )
-			local direction = PA_funcs.line_function_perpendicular( selection_secondary[1], selection_secondary[2] )
+			local direction = PrecisionAlign.Functions.line_function_perpendicular( selection_secondary[1], selection_secondary[2] )
 			if not direction then return false end
-			local origin = ( PA_funcs.line_global(selection_secondary[1]).startpoint + PA_funcs.line_global(selection_secondary[2]).startpoint ) * 0.5
-			return PA_funcs.set_plane( selection_primary, origin, direction )
+			local origin = ( PrecisionAlign.Functions.line_global(selection_secondary[1]).startpoint + PrecisionAlign.Functions.line_global(selection_secondary[2]).startpoint ) * 0.5
+			return PrecisionAlign.Functions.set_plane( selection_primary, origin, direction )
 		end
 end
 
@@ -2299,15 +2299,15 @@ function ROTATION_TAB:Init()
 		self.checkbox_relative1:SetSize(100,30)
 		self.checkbox_relative1.OnChange = function()
 			local ent, ang
-			if not PA_activeent and self.checkbox_relative1:GetChecked() then
+			if not PrecisionAlign.ActiveEnt and self.checkbox_relative1:GetChecked() then
 				self.checkbox_relative1:SetValue(false)
 			elseif self.checkbox_relative1:GetChecked() then
-				self.checkbox_relative1.lastentity = PA_activeent
+				self.checkbox_relative1.lastentity = PrecisionAlign.ActiveEnt
 				ang = self.sliders_angle1:GetValues()
-				ang = PA_activeent:WorldToLocalAngles( ToAngle(ang) )
+				ang = PrecisionAlign.ActiveEnt:WorldToLocalAngles( ToAngle(ang) )
 				self.sliders_angle1:SetValues( ToVector(ang) )
 			else
-				if not PA_activeent then
+				if not PrecisionAlign.ActiveEnt then
 					if self.checkbox_relative1.lastentity then
 						ent = self.checkbox_relative1.lastentity
 						self.checkbox_relative1.lastentity = nil
@@ -2315,7 +2315,7 @@ function ROTATION_TAB:Init()
 						return false
 					end
 				else
-					ent = PA_activeent
+					ent = PrecisionAlign.ActiveEnt
 				end
 
 				ang = self.sliders_angle1:GetValues()
@@ -2334,16 +2334,16 @@ function ROTATION_TAB:Init()
 
 			local pivot = self.list_pivotpoint:GetSelectedLine()
 			local vec
-			if pivot and PA_funcs.construct_exists( "Point", pivot ) then
-				vec = PA_funcs.point_global( pivot ).origin
+			if pivot and PrecisionAlign.Functions.construct_exists( "Point", pivot ) then
+				vec = PrecisionAlign.Functions.point_global( pivot ).origin
 			end
 
 			local relative = 0
 			if self.checkbox_relative1:GetChecked() then
 				relative = 1
-				--ang = PA_activeent:LocalToWorldAngles( ang )
+				--ang = PrecisionAlign.ActiveEnt:LocalToWorldAngles( ang )
 			end
-			if not PA_funcs.rotate_entity(ang, vec, relative, PA_activeent) then return false end
+			if not PrecisionAlign.Functions.rotate_entity(ang, vec, relative, PrecisionAlign.ActiveEnt) then return false end
 		end )
 
 	self.button_get1 = vgui.Create( "PA_Move_Button", self )
@@ -2353,10 +2353,10 @@ function ROTATION_TAB:Init()
 		self.button_get1:SetTooltip( "Get angle values from the selected entity" )
 		self.button_get1:SetFunction( function()
 			local ang
-			if self.checkbox_relative1:GetChecked() and PA_activeent then
+			if self.checkbox_relative1:GetChecked() and PrecisionAlign.ActiveEnt then
 				ang = Angle(0,0,0)
 			else
-				ang = PA_activeent:GetAngles()
+				ang = PrecisionAlign.ActiveEnt:GetAngles()
 			end
 
 			self.sliders_angle1:SetValues( ToVector(ang) )
@@ -2477,15 +2477,15 @@ function ROTATION_TAB:Init()
 		self.checkbox_relative2:SetSize(100,30)
 		self.checkbox_relative2.OnChange = function()
 			local ent, ang
-			if not PA_activeent and self.checkbox_relative2:GetChecked() then
+			if not PrecisionAlign.ActiveEnt and self.checkbox_relative2:GetChecked() then
 				self.checkbox_relative2:SetValue(false)
 			elseif self.checkbox_relative2:GetChecked() then
-				self.checkbox_relative2.lastentity = PA_activeent
+				self.checkbox_relative2.lastentity = PrecisionAlign.ActiveEnt
 				ang = self.sliders_angle2:GetValues()
-				ang = PA_activeent:WorldToLocalAngles( ToAngle(ang) )
+				ang = PrecisionAlign.ActiveEnt:WorldToLocalAngles( ToAngle(ang) )
 				self.sliders_angle2:SetValues( ToVector(ang) )
 			else
-				if not PA_activeent then
+				if not PrecisionAlign.ActiveEnt then
 					if self.checkbox_relative2.lastentity then
 						ent = self.checkbox_relative2.lastentity
 						self.checkbox_relative2.lastentity = nil
@@ -2493,7 +2493,7 @@ function ROTATION_TAB:Init()
 						return false
 					end
 				else
-					ent = PA_activeent
+					ent = PrecisionAlign.ActiveEnt
 				end
 
 				ang = self.sliders_angle2:GetValues()
@@ -2528,10 +2528,10 @@ function ROTATION_TAB:Init()
 		self.button_get2:SetTooltip( "Get angle values from the selected entity" )
 		self.button_get2:SetFunction( function()
 			local ang
-			if self.checkbox_relative2:GetChecked() and PA_activeent then
+			if self.checkbox_relative2:GetChecked() and PrecisionAlign.ActiveEnt then
 				ang = Angle(0,0,0)
 			else
-				ang = PA_activeent:GetAngles()
+				ang = PrecisionAlign.ActiveEnt:GetAngles()
 			end
 
 			self.sliders_angle2:SetValues( ToVector(ang) )
@@ -2573,12 +2573,12 @@ function ROTATION_TAB:Init()
 				return false
 			end
 
-			if not PA_funcs.construct_exists( "Line", selected_line ) then
+			if not PrecisionAlign.Functions.construct_exists( "Line", selected_line ) then
 				Warning("Line not correctly defined")
 				return false
 			end
 
-			local line = PA_funcs.line_global(selected_line)
+			local line = PrecisionAlign.Functions.line_global(selected_line)
 
 			local degrees = self.slider_axisangle:GetValue()
 			if degrees == 0 then return false end
@@ -2604,7 +2604,7 @@ function ROTATION_TAB:Init()
 				return false
 			end
 
-			local line = PA_funcs.line_global(selected_line)
+			local line = PrecisionAlign.Functions.line_global(selected_line)
 
 			if not line then
 				Warning("Line not correctly defined")
@@ -2616,18 +2616,18 @@ function ROTATION_TAB:Init()
 
 			local direction = (line.endpoint - line.startpoint):GetNormal()
 			local ang = ToAngle( direction * degrees )
-			-- local ang = PA_activeent:GetAngles()
+			-- local ang = PrecisionAlign.ActiveEnt:GetAngles()
 			-- ang:RotateAroundAxis( direction, degrees )
 
 			local pivot = self.list_pivotpoint:GetSelectedLine()
 			local vec = line.startpoint
-			if pivot and PA_funcs.construct_exists( "Point", pivot ) then
-				vec = PA_funcs.point_global( pivot ).origin
+			if pivot and PrecisionAlign.Functions.construct_exists( "Point", pivot ) then
+				vec = PrecisionAlign.Functions.point_global( pivot ).origin
 			end
 
 			local relative = 3
 
-			if not PA_funcs.rotate_entity(ang, vec, relative, PA_activeent) then return false end
+			if not PrecisionAlign.Functions.rotate_entity(ang, vec, relative, PrecisionAlign.ActiveEnt) then return false end
 		end )
 
 
@@ -2660,7 +2660,7 @@ function ROTATION_TAB:Init()
 			if rotang == Vector(0,0,0) then return false end
 
 			local ang = ToAngle( self.sliders_angle1:GetValues() )
-			ang = PA_funcs.rotate_world( ang, Angle(rotang.x, rotang.y, rotang.z) )
+			ang = PrecisionAlign.Functions.rotate_world( ang, Angle(rotang.x, rotang.y, rotang.z) )
 
 			self.sliders_angle1:SetValues( ToVector(ang) )
 			return true
@@ -2677,13 +2677,13 @@ function ROTATION_TAB:Init()
 
 			local pivot = self.list_pivotpoint:GetSelectedLine()
 			local vec
-			if pivot and PA_funcs.construct_exists( "Point", pivot ) then
-				vec = PA_funcs.point_global( pivot ).origin
+			if pivot and PrecisionAlign.Functions.construct_exists( "Point", pivot ) then
+				vec = PrecisionAlign.Functions.point_global( pivot ).origin
 			end
 
 			local relative = 2
 
-			if not PA_funcs.rotate_entity(ang, vec, relative, PA_activeent) then return false end
+			if not PrecisionAlign.Functions.rotate_entity(ang, vec, relative, PrecisionAlign.ActiveEnt) then return false end
 		end )
 end
 
@@ -2805,7 +2805,7 @@ function ROTATION_FUNCTIONS_TAB:Init()
 						return false
 					end
 
-					if not PA_funcs.construct_exists( string_table2[k], selection ) then
+					if not PrecisionAlign.Functions.construct_exists( string_table2[k], selection ) then
 						Warning( string_table2[k] .. " " .. tostring(selection) .. " has not been defined" )
 						return false
 					end
@@ -2816,19 +2816,19 @@ function ROTATION_FUNCTIONS_TAB:Init()
 			-- Filter out non-existant pivot / axis selections before passing to functions
 			local pivot = self.list_pivotpoint:GetSelectedLine()
 			if pivot then
-				if not PA_funcs.construct_exists( "Point", pivot ) then
+				if not PrecisionAlign.Functions.construct_exists( "Point", pivot ) then
 					pivot = nil
 				else
-					pivot = PA_funcs.point_global( pivot ).origin
+					pivot = PrecisionAlign.Functions.point_global( pivot ).origin
 				end
 			end
 
 			local axis = self.list_line_axis:GetSelectedLine()
 			if axis then
-				if not PA_funcs.construct_exists( "Line", axis ) then
+				if not PrecisionAlign.Functions.construct_exists( "Line", axis ) then
 					axis = nil
 				else
-					axis = PA_funcs.line_global( axis )
+					axis = PrecisionAlign.Functions.line_global( axis )
 				end
 			end
 
@@ -2872,7 +2872,7 @@ function ROTATION_FUNCTIONS_TAB:Init()
 		self.button_angle_2lines.selections = { 1, 1, 0, 0 }
 		self.button_angle_2lines.options = { 1, 0 }
 		self.button_angle_2lines.func = function( pivot, axis, selections )
-			return PA_funcs.rotate_2lines_parallel( pivot, selections[1], selections[2], PA_activeent )
+			return PrecisionAlign.Functions.rotate_2lines_parallel( pivot, selections[1], selections[2], PrecisionAlign.ActiveEnt )
 		end
 
 	self.button_angle_2planes = vgui.Create( "PA_Function_Button_Rotation", self )
@@ -2884,7 +2884,7 @@ function ROTATION_FUNCTIONS_TAB:Init()
 		self.button_angle_2planes.selections = { 0, 0, 1, 1 }
 		self.button_angle_2planes.options = { 1, 0 }
 		self.button_angle_2planes.func = function( pivot, axis, selections )
-			return PA_funcs.rotate_2planes_parallel( pivot, selections[1], selections[2], PA_activeent )
+			return PrecisionAlign.Functions.rotate_2planes_parallel( pivot, selections[1], selections[2], PrecisionAlign.ActiveEnt )
 		end
 
 	self.button_lineplane_normal = vgui.Create( "PA_Function_Button_Rotation", self )
@@ -2895,7 +2895,7 @@ function ROTATION_FUNCTIONS_TAB:Init()
 		self.button_lineplane_normal.selections = { 1, 0, 1, 0 }
 		self.button_lineplane_normal.options = { 1, 0 }
 		self.button_lineplane_normal.func = function( pivot, axis, selections )
-			return PA_funcs.rotate_lines_planenormal_parallel( pivot, selections[1], selections[2], PA_activeent )
+			return PrecisionAlign.Functions.rotate_lines_planenormal_parallel( pivot, selections[1], selections[2], PrecisionAlign.ActiveEnt )
 		end
 
 	self.button_lineplane = vgui.Create( "PA_Function_Button_Rotation", self )
@@ -2906,7 +2906,7 @@ function ROTATION_FUNCTIONS_TAB:Init()
 		self.button_lineplane.selections = { 1, 0, 1, 0 }
 		self.button_lineplane.options = { 1, 1 }
 		self.button_lineplane.func = function( pivot, axis, selections )
-			return PA_funcs.rotate_line_plane_parallel( pivot, axis, selections[1], selections[2], PA_activeent )
+			return PrecisionAlign.Functions.rotate_line_plane_parallel( pivot, axis, selections[1], selections[2], PrecisionAlign.ActiveEnt )
 		end
 
 	-- self.button_2line_intersect = vgui.Create( "PA_Function_Button_Rotation", self )
@@ -2927,14 +2927,14 @@ function ROTATION_FUNCTIONS_TAB:Init()
 		self.button_align_2lines.selections = { 1, 1, 0, 0 }
 		self.button_align_2lines.options = { 0, 0 }
 		self.button_align_2lines.func = function( pivot, axis, selections )
-			if PA_funcs.rotate_2lines_parallel( pivot, selections[1], selections[2], PA_activeent ) then
-				local vec1 = PA_funcs.line_global( selections[1] ).startpoint
-				local vec2 = PA_funcs.line_global( selections[2] ).startpoint
+			if PrecisionAlign.Functions.rotate_2lines_parallel( pivot, selections[1], selections[2], PrecisionAlign.ActiveEnt ) then
+				local vec1 = PrecisionAlign.Functions.line_global( selections[1] ).startpoint
+				local vec2 = PrecisionAlign.Functions.line_global( selections[2] ).startpoint
 				if not vec1 or not vec2 then
 					return false
 				end
 
-				return PA_funcs.move_entity( vec1, vec2, PA_activeent )
+				return PrecisionAlign.Functions.move_entity( vec1, vec2, PrecisionAlign.ActiveEnt )
 			end
 			return false
 		end
@@ -2947,7 +2947,7 @@ function ROTATION_FUNCTIONS_TAB:Init()
 		self.button_mirror.selections = { 0, 0, 1, 0 }
 		self.button_mirror.options = { 0, 0 }
 		self.button_mirror.func = function( pivot, axis, selections )
-			return PA_funcs.plane_mirror_entity( selections[1], PA_activeent )
+			return PrecisionAlign.Functions.plane_mirror_entity( selections[1], PrecisionAlign.ActiveEnt )
 		end
 end
 
@@ -3053,7 +3053,7 @@ function CONSTRAINTS_TAB:Init()
 				return false
 			end
 
-			if not PA_funcs.construct_exists( "Point", selection1 ) then
+			if not PrecisionAlign.Functions.construct_exists( "Point", selection1 ) then
 				Warning("Point 1 has not been defined")
 				return false
 			end
@@ -3067,20 +3067,20 @@ function CONSTRAINTS_TAB:Init()
 					return false
 				end
 
-				if not PA_funcs.construct_exists( "Point", selection2 ) then
+				if not PrecisionAlign.Functions.construct_exists( "Point", selection2 ) then
 					Warning("Point 2 has not been defined")
 					return false
 				end
 			end
 
 			-- Send local info if possible, no point in converting it to/from global if the constraint requires local coords
-			local point1 = precision_align_points[ selection1 ]
+			local point1 = PrecisionAlign.Points[ selection1 ]
 			local point2
 
-			if not PA_funcs.construct_exists( "Point", selection2 ) then
-				point2 = { ["origin"] = PA_funcs.point_global(selection1).origin + Vector(0,0,1) }	-- Set so default axis dir is (0,0,1)
+			if not PrecisionAlign.Functions.construct_exists( "Point", selection2 ) then
+				point2 = { ["origin"] = PrecisionAlign.Functions.point_global(selection1).origin + Vector(0,0,1) }	-- Set so default axis dir is (0,0,1)
 			else
-				point2 = precision_align_points[ selection2 ]
+				point2 = PrecisionAlign.Points[ selection2 ]
 			end
 
 			local Ent1 = point1.entity
@@ -3245,8 +3245,8 @@ function CONSTRAINTS_AXIS_TAB:Init()
 		local axis_selection = self.list_point_axis:GetSelectedLine()
 		local axis = 0
 		local line
-		if axis_selection and PA_funcs.construct_exists( "Line", axis_selection ) then
-			line = PA_funcs.line_global( axis_selection )
+		if axis_selection and PrecisionAlign.Functions.construct_exists( "Line", axis_selection ) then
+			line = PrecisionAlign.Functions.line_global( axis_selection )
 			axis = ( line.endpoint - line.startpoint ):GetNormal()
 			axis = { x = axis.x, y = axis.y, z = axis.z }
 		end
@@ -3734,17 +3734,17 @@ function CONSTRAINTS_WIRE_HYDRAULIC_TAB:Init()
 		self.matselect:SetConVar( PA_ .. "wire_hydraulic_material" )
 
 	self.Constraint_Func = function()
-		if not IsValid( PA_activeent ) then
+		if not IsValid( PrecisionAlign.ActiveEnt ) then
 			Warning( "Select a wire hydraulic controller" )
 			return false
 		end
 
-		if PA_activeent:GetClass() ~= "gmod_wire_hydraulic" then
+		if PrecisionAlign.ActiveEnt:GetClass() ~= "gmod_wire_hydraulic" then
 			Warning( "Select a wire hydraulic controller" )
 			return false
 		end
 
-		return PA_activeent:EntIndex()
+		return PrecisionAlign.ActiveEnt:EntIndex()
 	end
 end
 

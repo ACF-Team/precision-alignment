@@ -147,7 +147,7 @@ if SERVER then
 
 	function TOOL:SetActive( ent )
 		local ply = self:GetOwner()
-		local activeent = ply.PA_activeent
+		local activeent = ply.PrecisionAlign_ActiveEnt
 
 		local function Deselect( oldent )
 			if IsValid( oldent ) and oldent.PA then
@@ -157,7 +157,7 @@ if SERVER then
 					oldent:SetColor( colour )
 				end
 
-				oldent.PA.Ply.PA_activeent = nil
+				oldent.PA.Ply.PrecisionAlign_ActiveEnt = nil
 				oldent.PA = nil
 			end
 		end
@@ -174,7 +174,7 @@ if SERVER then
 				Deselect( ent )
 			end
 
-			ply.PA_activeent = ent
+			ply.PrecisionAlign_ActiveEnt = ent
 			ent.PA = {}
 			ent.PA.Ply = ply
 
@@ -195,7 +195,7 @@ if SERVER then
 			self:SendEntityData( ent )
 			return true
 		else
-			ply.PA_activeent = nil
+			ply.PrecisionAlign_ActiveEnt = nil
 
 			self:SendEntityData()
 			return false
@@ -381,7 +381,7 @@ function TOOL:RightClick( trace )
 	local ply = self:GetOwner()
 	local alt = ply:KeyDown( IN_SPEED )
 	if alt then
-		precision_align_lastaction_func( ply )
+		PrecisionAlign.LastAction( ply )
 	end
 
 	return true
@@ -441,15 +441,15 @@ local function construct_exists( construct_type, ID )
 	if not construct_type or not ID then return false end
 
 	if construct_type == "Point" then
-		if precision_align_points[ID].origin then
+		if PrecisionAlign.Points[ID].origin then
 			return true
 		end
 	elseif construct_type == "Line" then
-		if precision_align_lines[ID].startpoint and precision_align_lines[ID].endpoint then
+		if PrecisionAlign.Lines[ID].startpoint and PrecisionAlign.Lines[ID].endpoint then
 			return true
 		end
 	elseif construct_type == "Plane" then
-		if precision_align_planes[ID].origin and precision_align_planes[ID].normal then
+		if PrecisionAlign.Planes[ID].origin and PrecisionAlign.Planes[ID].normal then
 			return true
 		end
 	end
@@ -460,11 +460,11 @@ end
 local function GetConstructNum( curToolType )
 	local ToolNum
 	if curToolType >= 1 and curToolType <= 4 then
-		ToolNum = PA_selected_point
+		ToolNum = PrecisionAlign.SelectedPoint
 	elseif curToolType >= 5 and curToolType <= 7 then
-		ToolNum = PA_selected_line
+		ToolNum = PrecisionAlign.SelectedLine
 	elseif curToolType >= 8 and curToolType <= 9 then
-		ToolNum = PA_selected_plane
+		ToolNum = PrecisionAlign.SelectedPlane
 	end
 	return ToolNum
 end
