@@ -848,29 +848,30 @@ local function precision_align_constraint_func( _, ply )
 		local controller = Entity( vars )
 		if not IsValid( controller ) then return false end
 		if controller:GetClass() ~= "gmod_wire_hydraulic" then
-			print( "PA Error: Tried to create wire hydraulic with invalid controller ent" )
+			ErrorNoHaltWithStack( "PA Error: Tried to create wire hydraulic with invalid controller ent!" )
 			return false
 		end
 
-		local width = ply:GetInfoNum( PA_ .. "wire_hydraulic_width", 1 )
+		local width = ply:GetInfoNum( PA_ .. "wire_hydraulic_width", 3 )
 		local material = ply:GetInfo( PA_ .. "wire_hydraulic_material", "cable/rope" )
+		local speed = ply:GetInfoNum( PA_ .. "wire_hydraulic_speed", 16 )
+		local stretchonly = ply:GetInfoNum( PA_ .. "wire_hydraulic_stretchonly", 0 )
 
 		-- Create new constraint before removing the old one
 		local oldconstraint = controller.constraint
 		local oldrope = controller.rope
 
 		local rope
-		const, rope = MakeWireHydraulic( ply, Ent1, Ent2, 0, 0, LPos1, LPos2, width, material, 0, nil )
+		const, rope = MakeWireHydraulic( ply, Ent1, Ent2, 0, 0, LPos1, LPos2, width, material, speed, nil, stretchonly )
 
 		if const then
 			controller.MyId = controller:EntIndex()
 			const.MyCrtl = controller:EntIndex()
-			-- controller:SetConstraint( const )
+			controller:SetConstraint( const, rope )
 			controller:DeleteOnRemove( const )
 		end
 
 		if rope then
-			-- controller:SetRope( rope )
 			controller:DeleteOnRemove( rope )
 		end
 

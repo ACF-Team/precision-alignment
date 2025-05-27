@@ -48,7 +48,7 @@ end
 
 local function AddMenuText( text, x, y, parent )
 	local Text = vgui.Create( "DLabel", parent )
-	Text:SetFontInternal("Default")
+	Text:SetFont("Default")
 	Text:SetText( text )
 	Text:SizeToContents()
 	Text:SetPos( x, y )
@@ -796,7 +796,7 @@ vgui.Register("PA_Colour_Panel", COLOUR_PANEL, "DPanel")
 local CONSTRAINT_TITLE_TEXT = {}
 function CONSTRAINT_TITLE_TEXT:Init()
 	self:SetSize( self:GetParent():GetWide(), 15 )
-	self:SetFontInternal("Default")
+	self:SetFont("Default")
 	self:SetContentAlignment(2)
 end
 
@@ -1235,7 +1235,7 @@ function CONSTRUCT_MULTISELECT:GetSelection()
 	return selection
 end
 
-function CONSTRUCT_MULTISELECT:Paint(w,h)
+function CONSTRUCT_MULTISELECT:Paint()
 end
 
 vgui.Register("PA_Construct_Multiselect", CONSTRUCT_MULTISELECT, "DPanel")
@@ -1305,6 +1305,7 @@ end
 
 local TOOL_POINT_PANEL = {}
 function TOOL_POINT_PANEL:Init()
+	self:SetSize( CPanel_Width, 180 )
 	AddMenuText("POINT", CPanel_Width / 2 - 18, 0, self)
 
 	self.list_primarypoint = vgui.Create("PA_Construct_ListView", self)
@@ -1315,11 +1316,11 @@ function TOOL_POINT_PANEL:Init()
 		self.list_primarypoint:SetSize(CPanel_Width / 2 - 5, 100)
 		self.list_primarypoint:SetMultiSelect(false)
 		self.list_primarypoint:SetIndicatorOffset( 15 )
-		self.list_primarypoint.OnRowSelected = function( panel, line )
+		self.list_primarypoint.OnRowSelected = function( _, line )
 			PA_selected_point = line
 		end
 
-		self.list_primarypoint.DoDoubleClick = function( Line, LineID )
+		self.list_primarypoint.DoDoubleClick = function( _, LineID )
 			local panel = PA_manipulation_panel.points_tab
 			Open_Manipulation_Tab( panel.tab )
 			Listview_DoDoubleClick( panel.list_primarypoint, LineID )
@@ -1335,7 +1336,7 @@ function TOOL_POINT_PANEL:Init()
 		self.list_secondarypoint:SetMultiSelect(false)
 		self.list_secondarypoint:SetIndicatorOffset( 15 )
 
-		self.list_secondarypoint.DoDoubleClick = function( Line, LineID )
+		self.list_secondarypoint.DoDoubleClick = function( _, LineID )
 			local panel = PA_manipulation_panel.points_tab
 			Open_Manipulation_Tab( panel.tab )
 			Listview_DoDoubleClick( panel.list_primarypoint, LineID )
@@ -1388,20 +1389,16 @@ function TOOL_POINT_PANEL:Init()
 		end )
 end
 
-function TOOL_POINT_PANEL:PerformLayout()
-	self:SetSize(CPanel_Width, 180)
-end
-
-function TOOL_POINT_PANEL:Paint(w,h)
+function TOOL_POINT_PANEL:Paint()
 	draw.RoundedBox(6, 50, 0, CPanel_Width - 100, 14, BGColor_Point)
 end
 
 vgui.Register("PA_Tool_Point_Panel", TOOL_POINT_PANEL, "DPanel")
 
 
-
 local TOOL_LINE_PANEL = {}
 function TOOL_LINE_PANEL:Init()
+	self:SetSize( CPanel_Width, 180 )
 	AddMenuText("LINE", CPanel_Width / 2 - 12, 0, self)
 
 	self.list_line = vgui.Create( "PA_Construct_ListView", self )
@@ -1411,11 +1408,11 @@ function TOOL_LINE_PANEL:Init()
 		self.list_line:SetSize(CPanel_Width, 100)
 		self.list_line:SetMultiSelect(false)
 		self.list_line:SetIndicatorOffset( 15 )
-		self.list_line.OnRowSelected = function( panel, line )
+		self.list_line.OnRowSelected = function( _, line )
 			PA_selected_line = line
 		end
 
-		self.list_line.DoDoubleClick = function( Line, LineID )
+		self.list_line.DoDoubleClick = function( _, LineID )
 			local panel = PA_manipulation_panel.lines_tab
 			Open_Manipulation_Tab( panel.tab )
 			Listview_DoDoubleClick( panel.list_primary, LineID )
@@ -1461,20 +1458,16 @@ function TOOL_LINE_PANEL:Init()
 		end )
 end
 
-function TOOL_LINE_PANEL:PerformLayout()
-	self:SetSize(CPanel_Width, 180)
-end
-
-function TOOL_LINE_PANEL:Paint(w,h)
+function TOOL_LINE_PANEL:Paint()
 	draw.RoundedBox(6, 50, 0, CPanel_Width - 100, 14, BGColor_Line)
 end
 
 vgui.Register("PA_Tool_Line_Panel", TOOL_LINE_PANEL, "DPanel")
 
 
-
 local TOOL_PLANE_PANEL = {}
 function TOOL_PLANE_PANEL:Init()
+	self:SetSize( CPanel_Width, 160 )
 	AddMenuText("PLANE", CPanel_Width / 2 - 17, 0, self)
 
 	self.list_plane = vgui.Create( "PA_Construct_ListView", self )
@@ -1484,11 +1477,11 @@ function TOOL_PLANE_PANEL:Init()
 		self.list_plane:SetSize(CPanel_Width, 100)
 		self.list_plane:SetMultiSelect(false)
 		self.list_plane:SetIndicatorOffset( 15 )
-		self.list_plane.OnRowSelected = function( panel, line )
+		self.list_plane.OnRowSelected = function( _, line )
 			PA_selected_plane = line
 		end
 
-		self.list_plane.DoDoubleClick = function( Line, LineID )
+		self.list_plane.DoDoubleClick = function( _, LineID )
 			local panel = PA_manipulation_panel.planes_tab
 			Open_Manipulation_Tab( panel.tab )
 			Listview_DoDoubleClick( panel.list_primary, LineID )
@@ -1517,11 +1510,7 @@ function TOOL_PLANE_PANEL:Init()
 		end )
 end
 
-function TOOL_PLANE_PANEL:PerformLayout()
-	self:SetSize(CPanel_Width, 160)
-end
-
-function TOOL_PLANE_PANEL:Paint(w,h)
+function TOOL_PLANE_PANEL:Paint()
 	draw.RoundedBox(6, 50, 0, CPanel_Width - 100, 14, BGColor_Plane)
 end
 
@@ -1530,6 +1519,8 @@ vgui.Register("PA_Tool_Plane_Panel", TOOL_PLANE_PANEL, "DPanel")
 
 local TOOL_LIST = {}
 function TOOL_LIST:Init()
+	self:SetSize( CPanel_Width, 153 )
+
 	self.list_tooltype = vgui.Create("DListView", self)
 		self.list_tooltype:SetPos(0, 0)
 		self.list_tooltype:SetSize(CPanel_Width, 153)
@@ -1550,7 +1541,7 @@ function TOOL_LIST:Init()
 		self.list_tooltype:AddLine("Plane - Hitpos + Hitnormal")
 		self.list_tooltype:AddLine("Plane - Hitnormal")
 		self.list_tooltype:SelectItem( self.list_tooltype:GetLine( tooltypeCvar:GetInt() ) )
-		self.list_tooltype.OnRowSelected = function(parent, line, isselected)
+		self.list_tooltype.OnRowSelected = function(_, line)
 			RunConsoleCommand( PA_ .. "tooltype", tostring(line) )
 		end
 
@@ -1588,17 +1579,15 @@ function TOOL_LIST:Init()
 	end
 end
 
-function TOOL_LIST:PerformLayout()
-	self:SetSize(CPanel_Width, 153)
-end
-
-function TOOL_LIST:Paint(w,h)
+function TOOL_LIST:Paint()
 end
 
 vgui.Register("PA_CPanel_tool_list", TOOL_LIST, "DPanel")
 
 local TOOL_OPTIONS = {}
 function TOOL_OPTIONS:Init()
+	self:SetSize( CPanel_Width, 100 )
+
 	self.checkbox_display = vgui.Create( "DCheckBoxLabel", self )
 		self.checkbox_display:SetPos(0, 2)
 		self.checkbox_display:SetText( "Enable construct displays" )
@@ -1641,20 +1630,16 @@ function TOOL_OPTIONS:Init()
 
 	-- Help button
 	self.button_help = vgui.Create( "PA_Function_Button", self )
-		self.button_help:SetSize(60, 20)
-		self.button_help:SetPos(CPanel_Width - self.button_help:GetWide(), 2)
+		self.button_help:SetSize( 60, 20 )
+		self.button_help:SetPos( CPanel_Width - self.button_help:GetWide(), 2 )
 		self.button_help:SetText( "Help" )
-		self.button_help:SetTooltip( "Open online help using the Steam in-game browser" )
+		self.button_help:SetTooltip( "Open online help using the Steam in-game browser." )
 		self.button_help:SetFunction( function()
-			return gui.OpenURL( "https:--sourceforge.net/userapps/mediawiki/wenli/index.php?title=Precision_Alignment" )
+			return gui.OpenURL( "https://steamcommunity.com/sharedfiles/filedetails/?id=1461659319" )
 		end )
 end
 
-function TOOL_OPTIONS:PerformLayout()
-	self:SetSize(CPanel_Width, 100)
-end
-
-function TOOL_OPTIONS:Paint(w,h)
+function TOOL_OPTIONS:Paint()
 end
 
 vgui.Register("PA_CPanel_tool_options", TOOL_OPTIONS, "DPanel")
@@ -2067,7 +2052,7 @@ end
 hook.Add("HUDPaint", "draw_precision_align", precision_align_draw)
 
 
-local function precision_align_displayhud_func( ply, cmd, args )
+local function precision_align_displayhud_func( _, _, args )
 	local enabled = tobool( args[1] )
 	if not enabled then
 		hook.Remove( "HUDPaint", "draw_precision_align" )

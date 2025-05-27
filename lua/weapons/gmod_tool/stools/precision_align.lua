@@ -96,8 +96,10 @@ TOOL.ClientConVar =
 	["slider_color_g"]		= "255",
 	["slider_color_b"]		= "255",
 
-	["wire_hydraulic_width"]	= "1",
-	["wire_hydraulic_material"]	= "cable/rope",
+	["wire_hydraulic_width"]		= "3",
+	["wire_hydraulic_material"]		= "cable/rope",
+	["wire_hydraulic_speed"]		= "16",
+	["wire_hydraulic_stretchonly"]	= "0",
 
 	-- Stack number
 	["stack_nocollide"]		= "0"

@@ -2,7 +2,7 @@
 
 if SERVER then return end
 
-local PA_VERSION = 9
+local PA_VERSION = 10
 
 -- Standard functions
 local PA = "precision_align"
@@ -42,7 +42,7 @@ end
 local function AddMenuText( text, x, y, parent )
 	local Text = vgui.Create( "DLabel", parent )
 	--Text:SetFont("TabLarge")
-	Text:SetFontInternal("Default")
+	Text:SetFont("Default")
 	Text:SetText( text )
 	Text:SizeToContents()
 	Text:SetPos( x, y )
@@ -87,8 +87,7 @@ function MANIPULATION_FRAME:Init()
 	self:MakePopup()
 	self:SetKeyboardInputEnabled( false )
 
-	-- self.version_text = AddMenuText( "v1.5", 885, 5, self )
-	self.version_text = AddMenuText( "(unofficial v" .. PA_VERSION .. ")", 735, 5, self )
+	self.version_text = AddMenuText( "Version: v" .. PA_VERSION, 700, 5, self )
 
 	self.body = vgui.Create( "PA_Manipulation_Body", self )
 	self.panel = vgui.Create( "PA_Manipulation_Panel", self.body )
@@ -116,16 +115,14 @@ function MANIPULATION_FRAME:Init()
 	self.panel:AddSheet( "Rotation Functions", self.rotation_functions_tab, "icon16/arrow_refresh.png", false, false )
 	self.panel:AddSheet( "Constraints", self.constraints_tab, "icon16/anchor.png", false, false )
 
-
 	-- Help button
 	self.button_help = vgui.Create( "PA_Function_Button", self )
-		-- self.button_help:SetPos(875, 30)
-		self.button_help:SetPos(830, 30)
-		self.button_help:SetSize(60, 20)
+		self.button_help:SetPos( 810, 30 )
+		self.button_help:SetSize( 60, 20 )
 		self.button_help:SetText( "Help" )
-		self.button_help:SetTooltip( "Open online help using the Steam in-game browser" )
+		self.button_help:SetTooltip( "Open online help using the Steam in-game browser." )
 		self.button_help:SetFunction( function()
-			return gui.OpenURL( "https:--sourceforge.net/userapps/mediawiki/wenli/index.php?title=Precision_Alignment" )
+			return gui.OpenURL( "https://steamcommunity.com/sharedfiles/filedetails/?id=1461659319" )
 		end )
 end
 
@@ -296,14 +293,14 @@ function DISPLAYS_TAB:Init()
 			return true
 		end )
 
-	AddMenuText( "Entity Selection Colour", 575, 5, self )
+	AddMenuText( "Entity Selection Color", 575, 20, self )
 
 	self.colourcircle_enthighlight = vgui.Create("PA_ColourControl", self)
 		self.colourcircle_enthighlight:SetPos(590, 15)
 		self.colourcircle_enthighlight:SetConVar( PA_ .. "selectcolour" )
 		self.colourcircle_enthighlight:SetDefaults( 230, 0.6, 1, 255 )
 
-	AddMenuText( "Attachment Line Colour", 575, 225, self )
+	AddMenuText( "Attachment Line Color", 575, 240, self )
 
 	self.colourcircle_attachment = vgui.Create("PA_ColourControl", self)
 		self.colourcircle_attachment:SetPos(590, 235)
@@ -3509,9 +3506,9 @@ function CONSTRAINTS_ELASTIC_TAB:Init()
 		self.slider_width:SetConVar( PA_ .. "elastic_width" )
 
 	self.checkbox_stretch = vgui.Create( "DCheckBoxLabel", self )
-		self.checkbox_stretch:SetPos(50, 260)
+		self.checkbox_stretch:SetPos( 25, 260 )
 		self.checkbox_stretch:SetText( "Stretch Only" )
-		self.checkbox_stretch:SetSize(100,30)
+		self.checkbox_stretch:SetSize( 100, 30 )
 		self.checkbox_stretch:SetConVar( PA_ .. "elastic_stretchonly" )
 
 	self.matselect = vgui.Create( "RopeMaterial", self )
@@ -3599,9 +3596,9 @@ function CONSTRAINTS_ROPE_TAB:Init()
 		self.slider_setlength:SetConVar( PA_ .. "rope_setlength" )
 
 	self.checkbox_rigid = vgui.Create( "DCheckBoxLabel", self )
-		self.checkbox_rigid:SetPos(50, 260)
+		self.checkbox_rigid:SetPos( 25, 260 )
 		self.checkbox_rigid:SetText( "Rigid" )
-		self.checkbox_rigid:SetSize(100,30)
+		self.checkbox_rigid:SetSize( 100, 30 )
 		self.checkbox_rigid:SetConVar( PA_ .. "rope_rigid" )
 
 	self.matselect = vgui.Create( "RopeMaterial", self )
@@ -3686,10 +3683,10 @@ function CONSTRAINTS_WIRE_HYDRAULIC_TAB:Init()
 	self:CopyBounds( self:GetParent() )
 
 	self.Constraint = "Wire Hydraulic"
-	self.Description =	"This is for editing wire hydraulic constraints that have already been created\n\n" ..
-						"Select the hydraulic controller with right click, then set the constraint according to Pos 1 and Pos 2 to overwrite the existing hydraulic\n\n" ..
-						"For technical reasons there is no 'fixed' option, but this can be done easily by creating a slider constraint manually\n\n" ..
-						"As a result, it is advisable not to use this on fixed hydraulics without first removing the existing hydraulic slider"
+	self.Description =	"This is for editing Wire hydraulic constraints that have already been created.\n\n" ..
+						"Select the hydraulic controller with right click, then set the constraint according to Pos 1 and Pos 2 to overwrite the existing hydraulic.\n\n" ..
+						"For technical reasons there is no 'fixed' option, but this can be done easily by creating a slider constraint manually.\n\n" ..
+						"As a result, it is advisable not to use this on fixed hydraulics without first removing the existing hydraulic slider."
 
 	self.combobox = self:AddComboBox(
 		{
@@ -3700,7 +3697,9 @@ function CONSTRAINTS_WIRE_HYDRAULIC_TAB:Init()
 			CVars =
 			{
 				[0] = PA_ .. "wire_hydraulic_width",
-				[1] = PA_ .. "wire_hydraulic_material"
+				[1] = PA_ .. "wire_hydraulic_material",
+				[2] = PA_ .. "wire_hydraulic_speed",
+				[3] = PA_ .. "wire_hydraulic_stretchonly",
 			}
 		}
 	)
@@ -3709,15 +3708,29 @@ function CONSTRAINTS_WIRE_HYDRAULIC_TAB:Init()
 
 	self.slider_width = vgui.Create( "PA_Constraint_Slider", self )
 		self.slider_width.Label:SetSize( 75 )
-		self.slider_width:SetWide(225)
-		self.slider_width:SetPos(25, 60)
-		self.slider_width:SetMax(20)
+		self.slider_width:SetWide( 225 )
+		self.slider_width:SetPos( 25, 60 )
+		self.slider_width:SetMinMax( 1, 20 )
 		self.slider_width:SetText( "Width" )
 		self.slider_width:SetConVar( PA_ .. "wire_hydraulic_width" )
 
+	self.slider_speed = vgui.Create( "PA_Constraint_Slider", self )
+		self.slider_speed.Label:SetSize( 75 )
+		self.slider_speed:SetWide( 225 )
+		self.slider_speed:SetPos( 25, 110 )
+		self.slider_speed:SetMinMax( 4, 120 )
+		self.slider_speed:SetText( "In/Out Speed Mult" )
+		self.slider_speed:SetConVar( PA_ .. "wire_hydraulic_speed" )
+
+	self.checkbox_stretchonly = vgui.Create( "DCheckBoxLabel", self )
+		self.checkbox_stretchonly:SetPos( 25, 160 )
+		self.checkbox_stretchonly:SetText( "Winch Mode (Stretch Only)" )
+		self.checkbox_stretchonly:SetSize( 170, 30 )
+		self.checkbox_stretchonly:SetConVar( PA_ .. "wire_hydraulic_stretchonly" )
+
 	self.matselect = vgui.Create( "RopeMaterial", self )
-		self.matselect:SetPos(250, 20)
-		self.matselect:SetWide(250)
+		self.matselect:SetPos( 250, 20 )
+		self.matselect:SetWide( 250 )
 		self.matselect:SetConVar( PA_ .. "wire_hydraulic_material" )
 
 	self.Constraint_Func = function()
