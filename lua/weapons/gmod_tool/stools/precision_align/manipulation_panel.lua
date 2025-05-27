@@ -2,8 +2,6 @@
 
 if SERVER then return end
 
-local PA_VERSION = 10
-
 -- Standard functions
 local PA = "precision_align"
 local PA_ = PA .. "_"
@@ -87,7 +85,7 @@ function MANIPULATION_FRAME:Init()
 	self:MakePopup()
 	self:SetKeyboardInputEnabled( false )
 
-	self.version_text = AddMenuText( "Version: v" .. PA_VERSION, 700, 5, self )
+	self.version_text = AddMenuText( "Version: v" .. PrecisionAlign.Version, 700, 5, self )
 
 	self.body = vgui.Create( "PA_Manipulation_Body", self )
 	self.panel = vgui.Create( "PA_Manipulation_Panel", self.body )
@@ -151,7 +149,7 @@ function MANIPULATION_BODY:Init()
 end
 
 function MANIPULATION_BODY:Paint()
-	draw.RoundedBox(6, 0, 0, self:GetWide(), self:GetTall(), Color(0,0,0,255))
+	draw.RoundedBox(6, 0, 0, self:GetWide(), self:GetTall(), Color(0, 0, 0, 255))
 	draw.RoundedBox(6, 1, 1, self:GetWide() - 2, self:GetTall() - 2, BGColor_Background)
 end
 
@@ -182,7 +180,7 @@ function DISPLAYS_TAB:Init()
 	local function update_visibility( panel, construct_table )
 		local selection = panel:GetSelected()
 		local keytable = {}
-		for k, v in pairs( selection ) do
+		for k in pairs( selection ) do
 			keytable[ selection[k]:GetID() ] = true
 		end
 
@@ -205,15 +203,15 @@ function DISPLAYS_TAB:Init()
 
 	AddMenuText( "Construct Visibility", 10, 5, self.panel_multiselect.colour_panel_1 )
 
-	self.panel_multiselect.list_points.OnRowSelected = function( Panel, Line )
+	self.panel_multiselect.list_points.OnRowSelected = function( Panel )
 		update_visibility( Panel, PrecisionAlign.Points )
 	end
 
-	self.panel_multiselect.list_lines.OnRowSelected = function( Panel, Line )
+	self.panel_multiselect.list_lines.OnRowSelected = function( Panel )
 		update_visibility( Panel, PrecisionAlign.Lines )
 	end
 
-	self.panel_multiselect.list_planes.OnRowSelected = function( Panel, Line )
+	self.panel_multiselect.list_planes.OnRowSelected = function( Panel )
 		update_visibility( Panel, PrecisionAlign.Planes )
 	end
 
@@ -389,7 +387,7 @@ function POINTS_TAB:Init()
 		local vec
 
 		if not point_temp then
-			vec = Vector(0,0,0)
+			vec = Vector(0, 0, 0)
 		else
 			vec = point_temp.origin
 			if self.checkbox_relative1:GetChecked() then
@@ -410,7 +408,7 @@ function POINTS_TAB:Init()
 		self.list_primarypoint:SetTooltip( "Double click to update sliders" )
 		self.list_primarypoint:SetPos(15, 30)
 		self.list_primarypoint:SetMultiSelect(false)
-		self.list_primarypoint.DoDoubleClick = function( Line, LineID )
+		self.list_primarypoint.DoDoubleClick = function()
 			update_primary_listview()
 			play_sound_true()
 		end
@@ -418,7 +416,7 @@ function POINTS_TAB:Init()
 	self.checkbox_relative1 = vgui.Create( "DCheckBoxLabel", self )
 		self.checkbox_relative1:SetPos(140, 30)
 		self.checkbox_relative1:SetText( "Relative to\nEntity" )
-		self.checkbox_relative1:SetSize(100,30)
+		self.checkbox_relative1:SetSize(100, 30)
 		self.checkbox_relative1.OnChange = function()
 			if not update_primary_listview() and self.checkbox_relative1:GetChecked() then
 				self.checkbox_relative1:SetValue(false)
@@ -487,7 +485,7 @@ function POINTS_TAB:Init()
 		local vec
 
 		if not point_temp then
-			vec = Vector(0,0,0)
+			vec = Vector(0, 0, 0)
 		else
 			vec = point_temp.origin
 			if self.checkbox_relative2:GetChecked() then
@@ -508,7 +506,7 @@ function POINTS_TAB:Init()
 		self.list_secondarypoint:Text( "Secondary", "Point", self )
 		self.list_secondarypoint:SetPos(765, 30)
 		self.list_secondarypoint:SetMultiSelect(false)
-		self.list_secondarypoint.DoDoubleClick = function( Line, LineID )
+		self.list_secondarypoint.DoDoubleClick = function()
 			update_secondary_listview()
 			play_sound_true()
 		end
@@ -516,7 +514,7 @@ function POINTS_TAB:Init()
 
 	self.checkbox_relative2 = vgui.Create( "DCheckBoxLabel", self )
 		self.checkbox_relative2:SetPos(463, 30)
-		self.checkbox_relative2:SetSize(100,30)
+		self.checkbox_relative2:SetSize(100, 30)
 		self.checkbox_relative2:SetText( "Relative to\nEntity" )
 		self.checkbox_relative2.OnChange = function()
 			if not update_secondary_listview() and self.checkbox_relative2:GetChecked() then
@@ -608,7 +606,7 @@ function POINTS_TAB:Init()
 	self.functions_list_functionpoints = vgui.Create( "PA_Construct_ListView", self )
 		self.functions_list_functionpoints:SetPos(15, 250)
 		self.functions_list_functionpoints:Text( "Function Selection", "Point", self )
-		self.functions_list_functionpoints.OnRowSelected = function( LineID, Line )
+		self.functions_list_functionpoints.OnRowSelected = function()
 		end
 
 	self.functions_button_negate = vgui.Create( "PA_Function_Button", self )
@@ -718,7 +716,7 @@ function LINES_TAB:Init()
 		self.sliders_direction:SetValues(direction)
 		self.slider_length:SetValue(length)
 
-		if direction == Vector(0,0,0) then angle = Angle(0,0,0) end
+		if direction == Vector(0, 0, 0) then angle = Angle(0, 0, 0) end
 		if math.abs(angle.p) == 90 then	angle.y = 0	end
 
 		self.slider1_ang_p:SetValue(angle.p)
@@ -734,11 +732,11 @@ function LINES_TAB:Init()
 		local startpoint, endpoint, direction, length, angle
 
 		if not line_temp then
-			startpoint = Vector(0,0,0)
-			endpoint = Vector(0,0,0)
-			direction = Vector(0,0,0)
+			startpoint = Vector(0, 0, 0)
+			endpoint = Vector(0, 0, 0)
+			direction = Vector(0, 0, 0)
 			length = 0
-			angle = Angle(0,0,0)
+			angle = Angle(0, 0, 0)
 		else
 			startpoint = line_temp.startpoint
 			endpoint = line_temp.endpoint
@@ -756,7 +754,7 @@ function LINES_TAB:Init()
 			length = vec:Length()
 
 			if direction:Length() == 0 then
-				angle = Angle(0,0,0)
+				angle = Angle(0, 0, 0)
 			else
 				angle = NormAng(vec:Angle())
 			end
@@ -771,7 +769,7 @@ function LINES_TAB:Init()
 		self.list_primary:SetTooltip( "Double click to update sliders" )
 		self.list_primary:SetPos(15, 30)
 		self.list_primary:SetMultiSelect(false)
-		self.list_primary.DoDoubleClick = function( Line, LineID )
+		self.list_primary.DoDoubleClick = function()
 			update_primary_listview()
 			play_sound_true()
 		end
@@ -827,7 +825,7 @@ function LINES_TAB:Init()
 	self.checkbox_relative = vgui.Create( "DCheckBoxLabel", self )
 		self.checkbox_relative:SetPos(140, 30)
 		self.checkbox_relative:SetText( "Relative to\nEntity" )
-		self.checkbox_relative:SetSize(100,30)
+		self.checkbox_relative:SetSize(100, 30)
 		self.checkbox_relative.OnChange = function()
 			if not update_primary_listview() and self.checkbox_relative:GetChecked() then
 				self.checkbox_relative:SetValue(false)
@@ -891,7 +889,7 @@ function LINES_TAB:Init()
 
 		startpoint = self.sliders_startpoint:GetValues()
 		direction = self.sliders_direction:GetValues():GetNormal()
-		if direction == Vector(0,0,0) then direction = Vector(1,0,0) end
+		if direction == Vector(0, 0, 0) then direction = Vector(1, 0, 0) end
 
 		length = self.slider_length:GetValue()
 		endpoint = startpoint + direction * length
@@ -963,7 +961,7 @@ function LINES_TAB:Init()
 	self.functions_list_functionlines = vgui.Create( "PA_Construct_ListView", self )
 		self.functions_list_functionlines:Text( "Function Selection", "Line" )
 		self.functions_list_functionlines:SetPos(15, 250)
-		self.functions_list_functionlines.OnRowSelected = function( panel, line )
+		self.functions_list_functionlines.OnRowSelected = function()
 		end
 
 
@@ -972,7 +970,7 @@ function LINES_TAB:Init()
 		self.functions_button_reversedirection:SetText( "Reverse Direction" )
 		self.functions_button_reversedirection:SetTooltip( "Reverse direction values" )
 		self.functions_button_reversedirection:SetFunction( function()
-			self.sliders_direction:SetValues(Vector(0,0,0) - self.sliders_direction:GetValues())
+			self.sliders_direction:SetValues(Vector(0, 0, 0) - self.sliders_direction:GetValues())
 			return update_sliders_direction()
 		end )
 
@@ -1105,7 +1103,7 @@ function LINES_TAB:Init()
 			local lineID, line
 			local totalvec = self.sliders_endpoint:GetValues()
 
-			for k, v in pairs (selection) do
+			for _, v in pairs(selection) do
 				lineID = v:GetID()
 				if PrecisionAlign.Functions.construct_exists( "Line", lineID ) then
 					line = PrecisionAlign.Functions.line_global( lineID )
@@ -1170,7 +1168,7 @@ function PLANES_TAB:Init()
 		if normal then self.sliders_normal:SetValues(normal) end
 
 		if angle then
-			if not normal or normal == Vector(0,0,0) then angle = Angle(0,0,0) end
+			if not normal or normal == Vector(0, 0, 0) then angle = Angle(0, 0, 0) end
 			if math.abs(angle.p) > 89.999 then	angle.y = 0	end
 
 			self.slider_ang_p:SetValue(angle.p)
@@ -1187,9 +1185,9 @@ function PLANES_TAB:Init()
 		local origin, normal, angle
 
 		if not plane_temp then
-			origin = Vector(0,0,0)
-			normal = Vector(0,0,0)
-			angle = Angle(0,0,0)
+			origin = Vector(0, 0, 0)
+			normal = Vector(0, 0, 0)
+			angle = Angle(0, 0, 0)
 		else
 			if self.checkbox_relative:GetChecked() then
 				if IsValid(PrecisionAlign.ActiveEnt) then
@@ -1204,7 +1202,7 @@ function PLANES_TAB:Init()
 			normal = plane_temp.normal
 
 			if normal:Length() == 0 then
-				angle = Angle(0,0,0)
+				angle = Angle(0, 0, 0)
 			else
 				angle = NormAng(normal:Angle())
 			end
@@ -1219,7 +1217,7 @@ function PLANES_TAB:Init()
 		self.list_primary:SetTooltip( "Double click to update sliders" )
 		self.list_primary:SetPos(15, 30)
 		self.list_primary:SetMultiSelect(false)
-		self.list_primary.DoDoubleClick = function( Line, LineID )
+		self.list_primary.DoDoubleClick = function()
 			update_primary_listview()
 			play_sound_true()
 		end
@@ -1271,7 +1269,7 @@ function PLANES_TAB:Init()
 	self.checkbox_relative = vgui.Create( "DCheckBoxLabel", self )
 		self.checkbox_relative:SetPos(140, 30)
 		self.checkbox_relative:SetText( "Relative to\nEntity" )
-		self.checkbox_relative:SetSize(100,30)
+		self.checkbox_relative:SetSize(100, 30)
 		self.checkbox_relative.OnChange = function()
 			if not update_primary_listview() and self.checkbox_relative:GetChecked() then
 				self.checkbox_relative:SetValue(false)
@@ -1358,7 +1356,7 @@ function PLANES_TAB:Init()
 	self.functions_list_functionplanes = vgui.Create( "PA_Construct_ListView", self )
 		self.functions_list_functionplanes:Text( "Function Selection", "Plane" )
 		self.functions_list_functionplanes:SetPos(15, 250)
-		self.functions_list_functionplanes.OnRowSelected = function( panel, line )
+		self.functions_list_functionplanes.OnRowSelected = function()
 		end
 
 	self.functions_button_reversenormal = vgui.Create( "PA_Function_Button", self )
@@ -1461,7 +1459,7 @@ function MOVE_TAB:Init()
 	-- If no pivot, then the constructs won't move; only their directions will change
 	local function rotate_constructs( selection_constructs, pivot, axis, degrees )
 		if pivot then
-			for k, v in pairs ( selection_constructs.points ) do
+			for _, v in pairs( selection_constructs.points ) do
 				local point = PrecisionAlign.Functions.point_global(v)
 
 				local vec = point.origin - pivot
@@ -1473,9 +1471,9 @@ function MOVE_TAB:Init()
 			end
 		end
 
-		for k, v in pairs ( selection_constructs.lines ) do
+		for _, v in pairs( selection_constructs.lines ) do
 			local line = PrecisionAlign.Functions.line_global(v)
-			local vec1 = Vector(0,0,0)
+			local vec1 = Vector(0, 0, 0)
 			local pivot_temp = pivot
 
 			if pivot_temp then
@@ -1495,9 +1493,9 @@ function MOVE_TAB:Init()
 			PrecisionAlign.Functions.set_line( v, pivot_temp + vec1, pivot_temp + vec2 )
 		end
 
-		for k, v in pairs ( selection_constructs.planes ) do
+		for _, v in pairs( selection_constructs.planes ) do
 			local plane = PrecisionAlign.Functions.plane_global(v)
-			local vec1 = Vector(0,0,0)
+			local vec1 = Vector(0, 0, 0)
 			local pivot_temp = pivot
 
 			if pivot_temp then
@@ -1666,17 +1664,17 @@ function MOVE_TAB:Init()
 		end )
 
 	local function move_constructs( selection_constructs, vec )
-		for k, v in pairs ( selection_constructs.points ) do
+		for _, v in pairs( selection_constructs.points ) do
 			local point = PrecisionAlign.Functions.point_global(v)
 			PrecisionAlign.Functions.set_point( v, point.origin + vec )
 		end
 
-		for k, v in pairs ( selection_constructs.lines ) do
+		for _, v in pairs( selection_constructs.lines ) do
 			local line = PrecisionAlign.Functions.line_global(v)
 			PrecisionAlign.Functions.set_line( v, line.startpoint + vec, line.endpoint + vec )
 		end
 
-		for k, v in pairs ( selection_constructs.planes ) do
+		for _, v in pairs( selection_constructs.planes ) do
 			local plane = PrecisionAlign.Functions.plane_global(v)
 			PrecisionAlign.Functions.set_plane( v, plane.origin + vec )
 		end
@@ -1715,17 +1713,17 @@ function MOVE_TAB:Init()
 			local planePrimary = PrecisionAlign.Functions.plane_global( selection_primary[1] )
 			local origin, normal = planePrimary.origin, planePrimary.normal
 
-			for k, v in pairs ( selection_constructs.points ) do
+			for _, v in pairs( selection_constructs.points ) do
 				local point = PrecisionAlign.Functions.point_global(v)
 				PrecisionAlign.Functions.set_point( v, PrecisionAlign.Functions.point_mirror( point.origin, origin, normal ) )
 			end
 
-			for k, v in pairs ( selection_constructs.lines ) do
+			for _, v in pairs( selection_constructs.lines ) do
 				local line = PrecisionAlign.Functions.line_global(v)
 				PrecisionAlign.Functions.set_line( v, PrecisionAlign.Functions.point_mirror( line.startpoint, origin, normal ), PrecisionAlign.Functions.point_mirror( line.endpoint, origin, normal ) )
 			end
 
-			for k, v in pairs ( selection_constructs.planes ) do
+			for _, v in pairs( selection_constructs.planes ) do
 				local plane = PrecisionAlign.Functions.plane_global(v)
 				PrecisionAlign.Functions.set_plane( v, PrecisionAlign.Functions.point_mirror( plane.origin, origin, normal ), PrecisionAlign.Functions.direction_mirror( plane.normal, normal ) )
 			end
@@ -1743,7 +1741,7 @@ function MOVE_TAB:Init()
 		self.list_pivotpoint:SetPos(463, 250)
 		self.list_pivotpoint:SetTooltip( "Double click to deselect" )
 		self.list_pivotpoint:SetMultiSelect(false)
-		self.list_pivotpoint.DoDoubleClick = function( Line, LineID )
+		self.list_pivotpoint.DoDoubleClick = function()
 			self.list_pivotpoint:ClearSelection()
 		end
 
@@ -1773,7 +1771,7 @@ function MOVE_TAB:Init()
 		self.button_worldrotate:SetTooltip( "Rotate constructs by these values" )
 		self.button_worldrotate:SetFunction( function()
 			local rotang = self.sliders_angle_world:GetValues()
-			if rotang == Vector(0,0,0) then return false end
+			if rotang == Vector(0, 0, 0) then return false end
 
 			-- Check pivot selection
 			local pivot_selection = self.list_pivotpoint:GetSelectedLine()
@@ -1791,9 +1789,9 @@ function MOVE_TAB:Init()
 			end
 
 			-- Pitch, Yaw, Roll
-			rotate_constructs( selection_constructs, pivot, Vector(0,1,0), rotang.x )
-			rotate_constructs( selection_constructs, pivot, Vector(0,0,1), rotang.y )
-			rotate_constructs( selection_constructs, pivot, Vector(1,0,0), rotang.z )
+			rotate_constructs( selection_constructs, pivot, Vector(0, 1, 0), rotang.x )
+			rotate_constructs( selection_constructs, pivot, Vector(0, 0, 1), rotang.y )
+			rotate_constructs( selection_constructs, pivot, Vector(1, 0, 0), rotang.z )
 
 			return true
 		end )
@@ -1905,7 +1903,7 @@ function FUNCTIONS_TAB:Init()
 		self.text_title:SetPos( width * 4 + 15, 25 )
 		self.text_title:SetWide( width * 2 - 29 )
 		self.text_title:SetContentAlignment(7)
-		self.text_title:SetTextColor( Color(20,20,20,255) )
+		self.text_title:SetTextColor( Color(20, 20, 20, 255) )
 		self.text_title:SetText("- Select a function -")
 
 	self.text_description = vgui.Create( "DLabel", self )
@@ -1913,7 +1911,7 @@ function FUNCTIONS_TAB:Init()
 		self.text_description:SetSize( width * 2 - 29, self:GetTall() / 2  - 78 )
 		self.text_description:SetWrap( true )
 		self.text_description:SetContentAlignment(7)
-		self.text_description:SetTextColor( Color(20,20,20,255) )
+		self.text_description:SetTextColor( Color(20, 20, 20, 255) )
 		self.text_description:SetText("")
 
 
@@ -1963,7 +1961,7 @@ function FUNCTIONS_TAB:Init()
 					end
 
 					-- Check the selections point to valid constructs
-					for l, w in pairs (selection) do
+					for _, w in pairs(selection) do
 						local ID = w:GetID()
 						if not PrecisionAlign.Functions.construct_exists( string_table[k], ID ) then
 							Warning( string_table[k] .. " " .. tostring(ID) .. " has not been defined" )
@@ -2289,14 +2287,14 @@ function ROTATION_TAB:Init()
 		self.list_pivotpoint:SetPos(15, 30)
 		self.list_pivotpoint:SetTooltip( "Double click to deselect" )
 		self.list_pivotpoint:SetMultiSelect(false)
-		self.list_pivotpoint.DoDoubleClick = function( Line, LineID )
+		self.list_pivotpoint.DoDoubleClick = function()
 			self.list_pivotpoint:ClearSelection()
 		end
 
 	self.checkbox_relative1 = vgui.Create( "DCheckBoxLabel", self )
 		self.checkbox_relative1:SetPos(140, 30)
 		self.checkbox_relative1:SetText( "Relative to\nEntity" )
-		self.checkbox_relative1:SetSize(100,30)
+		self.checkbox_relative1:SetSize(100, 30)
 		self.checkbox_relative1.OnChange = function()
 			local ent, ang
 			if not PrecisionAlign.ActiveEnt and self.checkbox_relative1:GetChecked() then
@@ -2354,7 +2352,7 @@ function ROTATION_TAB:Init()
 		self.button_get1:SetFunction( function()
 			local ang
 			if self.checkbox_relative1:GetChecked() and PrecisionAlign.ActiveEnt then
-				ang = Angle(0,0,0)
+				ang = Angle(0, 0, 0)
 			else
 				ang = PrecisionAlign.ActiveEnt:GetAngles()
 			end
@@ -2474,7 +2472,7 @@ function ROTATION_TAB:Init()
 	self.checkbox_relative2 = vgui.Create( "DCheckBoxLabel", self )
 		self.checkbox_relative2:SetPos(540, 30)
 		self.checkbox_relative2:SetText( "Relative to\nEntity" )
-		self.checkbox_relative2:SetSize(100,30)
+		self.checkbox_relative2:SetSize(100, 30)
 		self.checkbox_relative2.OnChange = function()
 			local ent, ang
 			if not PrecisionAlign.ActiveEnt and self.checkbox_relative2:GetChecked() then
@@ -2529,7 +2527,7 @@ function ROTATION_TAB:Init()
 		self.button_get2:SetFunction( function()
 			local ang
 			if self.checkbox_relative2:GetChecked() and PrecisionAlign.ActiveEnt then
-				ang = Angle(0,0,0)
+				ang = Angle(0, 0, 0)
 			else
 				ang = PrecisionAlign.ActiveEnt:GetAngles()
 			end
@@ -2657,7 +2655,7 @@ function ROTATION_TAB:Init()
 		self.button_worldrotate:SetFunction( function()
 			local rotang = self.sliders_angle_world:GetValues()
 
-			if rotang == Vector(0,0,0) then return false end
+			if rotang == Vector(0, 0, 0) then return false end
 
 			local ang = ToAngle( self.sliders_angle1:GetValues() )
 			ang = PrecisionAlign.Functions.rotate_world( ang, Angle(rotang.x, rotang.y, rotang.z) )
@@ -2673,7 +2671,7 @@ function ROTATION_TAB:Init()
 		self.button_worldrotate_entity:SetTooltip( "Rotate the active entity relative to the world axes" )
 		self.button_worldrotate_entity:SetFunction( function()
 			local ang = ToAngle( self.sliders_angle_world:GetValues() )
-			if ang == Angle(0,0,0) then return false end
+			if ang == Angle(0, 0, 0) then return false end
 
 			local pivot = self.list_pivotpoint:GetSelectedLine()
 			local vec
@@ -2768,7 +2766,7 @@ function ROTATION_FUNCTIONS_TAB:Init()
 		self.text_title:SetPos( width * 4 + 15, 25 )
 		self.text_title:SetWide( width * 2 - 29 )
 		self.text_title:SetContentAlignment(7)
-		self.text_title:SetTextColor( Color(20,20,20,255) )
+		self.text_title:SetTextColor( Color(20, 20, 20, 255) )
 		self.text_title:SetText("- Select a function -")
 
 	self.text_description = vgui.Create( "DLabel", self )
@@ -2776,7 +2774,7 @@ function ROTATION_FUNCTIONS_TAB:Init()
 		self.text_description:SetSize( width * 2 - 29, self:GetTall() / 2  - 78 )
 		self.text_description:SetWrap( true )
 		self.text_description:SetContentAlignment(7)
-		self.text_description:SetTextColor( Color(20,20,20,255) )
+		self.text_description:SetTextColor( Color(20, 20, 20, 255) )
 		self.text_description:SetText("")
 
 
@@ -2846,7 +2844,7 @@ function ROTATION_FUNCTIONS_TAB:Init()
 		self.list_pivotpoint:SetPos(20, 250)
 		self.list_pivotpoint:SetTooltip( "Double click to deselect" )
 		self.list_pivotpoint:SetMultiSelect(false)
-		self.list_pivotpoint.DoDoubleClick = function( Line, LineID )
+		self.list_pivotpoint.DoDoubleClick = function()
 			self.list_pivotpoint:ClearSelection()
 		end
 
@@ -2855,7 +2853,7 @@ function ROTATION_FUNCTIONS_TAB:Init()
 		self.list_line_axis:SetPos(width + 20, 250)
 		self.list_line_axis:SetTooltip( "Double click to deselect" )
 		self.list_line_axis:SetMultiSelect(false)
-		self.list_line_axis.DoDoubleClick = function( Line, LineID )
+		self.list_line_axis.DoDoubleClick = function()
 			self.list_line_axis:ClearSelection()
 		end
 
@@ -2871,7 +2869,7 @@ function ROTATION_FUNCTIONS_TAB:Init()
 											   "If no pivot point is selected, by default this will pivot about the start point of line 1"
 		self.button_angle_2lines.selections = { 1, 1, 0, 0 }
 		self.button_angle_2lines.options = { 1, 0 }
-		self.button_angle_2lines.func = function( pivot, axis, selections )
+		self.button_angle_2lines.func = function( pivot, _, selections )
 			return PrecisionAlign.Functions.rotate_2lines_parallel( pivot, selections[1], selections[2], PrecisionAlign.ActiveEnt )
 		end
 
@@ -2883,7 +2881,7 @@ function ROTATION_FUNCTIONS_TAB:Init()
 												"If no pivot point is selected, by default this will pivot about the origin of plane 1"
 		self.button_angle_2planes.selections = { 0, 0, 1, 1 }
 		self.button_angle_2planes.options = { 1, 0 }
-		self.button_angle_2planes.func = function( pivot, axis, selections )
+		self.button_angle_2planes.func = function( pivot, _, selections )
 			return PrecisionAlign.Functions.rotate_2planes_parallel( pivot, selections[1], selections[2], PrecisionAlign.ActiveEnt )
 		end
 
@@ -2894,7 +2892,7 @@ function ROTATION_FUNCTIONS_TAB:Init()
 												   "This is the angle line 1 must be rotated by until it lies in the same direction as the plane normal"
 		self.button_lineplane_normal.selections = { 1, 0, 1, 0 }
 		self.button_lineplane_normal.options = { 1, 0 }
-		self.button_lineplane_normal.func = function( pivot, axis, selections )
+		self.button_lineplane_normal.func = function( pivot, _, selections )
 			return PrecisionAlign.Functions.rotate_lines_planenormal_parallel( pivot, selections[1], selections[2], PrecisionAlign.ActiveEnt )
 		end
 
@@ -2926,7 +2924,7 @@ function ROTATION_FUNCTIONS_TAB:Init()
 											   "This is identical to the 'Angle Between 2 Lines' rotation function, except that it will also move the entity along the vector from line 1's start point to line 2's start point."
 		self.button_align_2lines.selections = { 1, 1, 0, 0 }
 		self.button_align_2lines.options = { 0, 0 }
-		self.button_align_2lines.func = function( pivot, axis, selections )
+		self.button_align_2lines.func = function( pivot, _, selections )
 			if PrecisionAlign.Functions.rotate_2lines_parallel( pivot, selections[1], selections[2], PrecisionAlign.ActiveEnt ) then
 				local vec1 = PrecisionAlign.Functions.line_global( selections[1] ).startpoint
 				local vec2 = PrecisionAlign.Functions.line_global( selections[2] ).startpoint
@@ -2946,7 +2944,7 @@ function ROTATION_FUNCTIONS_TAB:Init()
 										 "Note that some props have different planes of symmetry - this can usually be remedied by rotating the prop in some direction by 90 or 180 degrees relative to itself about its centre of mass"
 		self.button_mirror.selections = { 0, 0, 1, 0 }
 		self.button_mirror.options = { 0, 0 }
-		self.button_mirror.func = function( pivot, axis, selections )
+		self.button_mirror.func = function( _, _, selections )
 			return PrecisionAlign.Functions.plane_mirror_entity( selections[1], PrecisionAlign.ActiveEnt )
 		end
 end
@@ -3006,7 +3004,7 @@ function CONSTRAINTS_TAB:Init()
 		self.list_point_LPos2:SetPos(13, 22)
 		self.list_point_LPos2:SetTooltip( "Double click to deselect" )
 		self.list_point_LPos2:SetMultiSelect(false)
-		self.list_point_LPos2.DoDoubleClick = function( Line, LineID )
+		self.list_point_LPos2.DoDoubleClick = function()
 			self.list_point_LPos2:ClearSelection()
 		end
 
@@ -3037,7 +3035,7 @@ function CONSTRAINTS_TAB:Init()
 		self.text_description:SetSize( 195, 284 )
 		self.text_description:SetWrap( true )
 		self.text_description:SetContentAlignment(7)
-		self.text_description:SetTextColor( Color(20,20,20,255) )
+		self.text_description:SetTextColor( Color(20, 20, 20, 255) )
 	self:UpdateText()
 
 	self.button_constraint = vgui.Create( "PA_Function_Button", self )
@@ -3078,7 +3076,7 @@ function CONSTRAINTS_TAB:Init()
 			local point2
 
 			if not PrecisionAlign.Functions.construct_exists( "Point", selection2 ) then
-				point2 = { ["origin"] = PrecisionAlign.Functions.point_global(selection1).origin + Vector(0,0,1) }	-- Set so default axis dir is (0,0,1)
+				point2 = { ["origin"] = PrecisionAlign.Functions.point_global(selection1).origin + Vector(0, 0, 1) }	-- Set so default axis dir is (0, 0, 1)
 			else
 				point2 = PrecisionAlign.Points[ selection2 ]
 			end
@@ -3124,7 +3122,7 @@ function CONSTRAINTS_TAB:Init()
 	for _, v in pairs (self.panel.Items) do
 		local Tab = v.Tab
 		if Tab then
-			Tab.OnMousePressed = function( mcode )
+			Tab.OnMousePressed = function()
 				if self.panel:GetActiveTab() ~= Tab then
 					self.panel:SetActiveTab( Tab )
 					self:UpdateText()
@@ -3135,7 +3133,7 @@ function CONSTRAINTS_TAB:Init()
 end
 
 function CONSTRAINTS_TAB:Paint()
-	--draw.RoundedBox(6, 0, 0, self:GetWide(), self:GetTall(), Color(100,100,100,255))
+	--draw.RoundedBox(6, 0, 0, self:GetWide(), self:GetTall(), Color(100, 100, 100, 255))
 
 	-- "Anchor Points" Background
 	draw.RoundedBox(6, 5, 5, 136, 22, BGColor_Point)
@@ -3167,7 +3165,7 @@ function CONSTRAINTS_PANEL:Init()
 end
 
 function CONSTRAINTS_PANEL:Paint()
-	--draw.RoundedBox(6, 0, 0, self:GetWide(), self:GetTall(), Color(100,100,100,255))
+	--draw.RoundedBox(6, 0, 0, self:GetWide(), self:GetTall(), Color(100, 100, 100, 255))
 end
 
 vgui.Register("PA_Constraints_Panel", CONSTRAINTS_PANEL, "DPropertySheet")
@@ -3194,7 +3192,7 @@ function CONSTRAINTS_AXIS_TAB:Init()
 		self.list_point_axis:SetPos(13, 22)
 		self.list_point_axis:SetTooltip( "Double click to deselect" )
 		self.list_point_axis:SetMultiSelect(false)
-		self.list_point_axis.DoDoubleClick = function( Line, LineID )
+		self.list_point_axis.DoDoubleClick = function()
 			self.list_point_axis:ClearSelection()
 		end
 
@@ -3237,7 +3235,7 @@ function CONSTRAINTS_AXIS_TAB:Init()
 	self.checkbox_nocollide = vgui.Create( "DCheckBoxLabel", self )
 		self.checkbox_nocollide:SetPos(180, 220)
 		self.checkbox_nocollide:SetText( "No Collide" )
-		self.checkbox_nocollide:SetSize(100,30)
+		self.checkbox_nocollide:SetSize(100, 30)
 		self.checkbox_nocollide:SetConVar( PA_ .. "axis_nocollide" )
 
 	-- Send extra constraint info - if this returns false then no data is sent to the server
@@ -3291,7 +3289,7 @@ function CONSTRAINTS_BALLSOCKET_TAB:Init()
 	self.checkbox_nocollide = vgui.Create( "DCheckBoxLabel", self )
 		self.checkbox_nocollide:SetPos(50, 110)
 		self.checkbox_nocollide:SetText( "No Collide" )
-		self.checkbox_nocollide:SetSize(100,30)
+		self.checkbox_nocollide:SetSize(100, 30)
 		self.checkbox_nocollide:SetConVar( PA_ .. "ballsocket_nocollide" )
 
 	self.Constraint_Func = function()
@@ -3427,13 +3425,13 @@ function CONSTRAINTS_BALLSOCKET_ADV_TAB:Init()
 	self.checkbox_free = vgui.Create( "DCheckBoxLabel", self )
 		self.checkbox_free:SetPos(50, 335)
 		self.checkbox_free:SetText( "Free Movement" )
-		self.checkbox_free:SetSize(100,30)
+		self.checkbox_free:SetSize(100, 30)
 		self.checkbox_free:SetConVar( PA_ .. "ballsocket_adv_onlyrotation" )
 
 	self.checkbox_nocollide = vgui.Create( "DCheckBoxLabel", self )
 		self.checkbox_nocollide:SetPos(50, 363)
 		self.checkbox_nocollide:SetText( "No Collide" )
-		self.checkbox_nocollide:SetSize(100,30)
+		self.checkbox_nocollide:SetSize(100, 30)
 		self.checkbox_nocollide:SetConVar( PA_ .. "ballsocket_adv_nocollide" )
 
 	self.Constraint_Func = function()

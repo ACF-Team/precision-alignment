@@ -143,7 +143,7 @@ function STACK_POPUP:Init()
 end
 
 
-function STACK_POPUP:Paint( w, h)
+function STACK_POPUP:Paint()
 	if ( self.m_bBackgroundBlur ) then
 		Derma_DrawBackgroundBlur( self, self.m_fCreateTime )
 	end
@@ -152,7 +152,7 @@ function STACK_POPUP:Paint( w, h)
 	draw.RoundedBox(6, 0, 0, width, 25, BGColor_Display)
 	draw.RoundedBox(6, 2, 2, width - 4, 21, BGColor_Background)
 
-	draw.RoundedBox(6, 0, 25, width, height - 25, Color(0, 0, 0, 255))
+	draw.RoundedBox(6, 0, 25, width, height - 25, color_black)
 	draw.RoundedBox(6, 1, 26, width - 2, height - 27, BGColor_Background )
 end
 
@@ -213,11 +213,11 @@ function INDICATOR:PerformLayout()
 	self:SetPos( width - height, 2 )
 end
 
-function INDICATOR:Paint(w,h)
+function INDICATOR:Paint()
 	local textbox = self:GetParent()
 
 	if PrecisionAlign.Functions.construct_exists(textbox:GetListView().construct_type, textbox:GetID()) then
-		draw.RoundedBox( 6, 0, 0, self:GetWide(), self:GetTall(), Color(0,230,0,255) )
+		draw.RoundedBox( 6, 0, 0, self:GetWide(), self:GetTall(), Color(0, 230, 0, 255) )
 	end
 end
 
@@ -266,7 +266,7 @@ vgui.Register("PA_XYZ_Slider", XYZ_SLIDER, "DNumSlider")
 local text = {}
 
 function text:Init()
-	self:SetSize(130,100)
+	self:SetSize(130, 100)
 
 end
 vgui.Register("PA_Temp_textbox", text, "DLabel")
@@ -341,7 +341,7 @@ function XYZ_SLIDERS:SetRange( x )
 	self.slider_z:SetMinMax( -x, x )
 end
 
-function XYZ_SLIDERS:Paint(w,h)
+function XYZ_SLIDERS:Paint()
 end
 
 vgui.Register("PA_XYZ_Sliders", XYZ_SLIDERS, "DPanel")
@@ -443,10 +443,10 @@ function FUNCTION_BUTTON_2:Init()
 end
 
 -- Override mouse functions (make it into a toggle button)
-function FUNCTION_BUTTON_2:OnMousePressed( mousecode )
+function FUNCTION_BUTTON_2:OnMousePressed()
 	if not self.Depressed then
 		-- pop up any previously depressed buttons
-		for k, v in pairs (function_buttons_2_list) do
+		for _, v in pairs(function_buttons_2_list) do
 			if v.Depressed then
 				v.Depressed = false
 			end
@@ -456,7 +456,7 @@ function FUNCTION_BUTTON_2:OnMousePressed( mousecode )
 	end
 end
 
-function FUNCTION_BUTTON_2:OnMouseReleased( mousecode )
+function FUNCTION_BUTTON_2:OnMouseReleased()
 end
 
 vgui.Register("PA_Function_Button_2", FUNCTION_BUTTON_2, "DButton")
@@ -505,10 +505,10 @@ function FUNCTION_BUTTON_3:Init()
 end
 
 -- Override mouse functions (make it into a toggle button)
-function FUNCTION_BUTTON_3:OnMousePressed( mousecode )
+function FUNCTION_BUTTON_3:OnMousePressed()
 	if not self.Depressed then
 		-- pop up any previously depressed buttons
-		for k, v in pairs (function_buttons_3_list) do
+		for _, v in pairs (function_buttons_3_list) do
 			if v.Depressed then
 				v.Depressed = false
 			end
@@ -518,7 +518,7 @@ function FUNCTION_BUTTON_3:OnMousePressed( mousecode )
 	end
 end
 
-function FUNCTION_BUTTON_3:OnMouseReleased( mousecode )
+function FUNCTION_BUTTON_3:OnMouseReleased()
 end
 
 vgui.Register("PA_Function_Button_3", FUNCTION_BUTTON_3, "DButton")
@@ -590,10 +590,10 @@ function FUNCTION_BUTTON_ROTATION:Init()
 end
 
 -- Override mouse functions (make it into a toggle button)
-function FUNCTION_BUTTON_ROTATION:OnMousePressed( mousecode )
+function FUNCTION_BUTTON_ROTATION:OnMousePressed()
 	if not self.Depressed then
 		-- pop up any previously depressed buttons
-		for k, v in pairs (rotation_function_buttons_list) do
+		for _, v in pairs(rotation_function_buttons_list) do
 			if v.Depressed then
 				v.Depressed = false
 			end
@@ -603,7 +603,7 @@ function FUNCTION_BUTTON_ROTATION:OnMousePressed( mousecode )
 	end
 end
 
-function FUNCTION_BUTTON_ROTATION:OnMouseReleased( mousecode )
+function FUNCTION_BUTTON_ROTATION:OnMouseReleased()
 end
 
 vgui.Register("PA_Function_Button_Rotation", FUNCTION_BUTTON_ROTATION, "DButton")
@@ -621,7 +621,7 @@ end
 
 function ZERO_BUTTON:SetSliders( panel )
 	self:SetFunction( function()
-		panel:SetValues( Vector(0,0,0) )
+		panel:SetValues( Vector(0, 0, 0) )
 		return true
 	end )
 end
@@ -777,7 +777,7 @@ function COLOUR_PANEL:SetColour( colour )
 	self.setcolour = colour
 end
 
-function COLOUR_PANEL:Paint(w,h)
+function COLOUR_PANEL:Paint()
 	for k, v in pairs (self.colour) do
 		self.colour[k] = v + (self.setcolour[k] - v) / 10
 	end
@@ -805,8 +805,8 @@ vgui.Register("PA_Constraint_Title_Text", CONSTRAINT_TITLE_TEXT, "DLabel")
 
 local CONSTRAINTS_SHEET = {}
 
-function CONSTRAINTS_SHEET:Paint(w,h)
-	draw.RoundedBox(6, 0, 0, self:GetWide(), self:GetTall(), Color(140,140,140,255))
+function CONSTRAINTS_SHEET:Paint( w, h )
+	draw.RoundedBox( 6, 0, 0, w, h, Color( 140, 140, 140, 255 ) )
 end
 
 -- Taken from gamemodes/sandbox/gamemode/spawnmenu/controls/control_presets.lua
@@ -823,7 +823,7 @@ function CONSTRAINTS_SHEET:AddComboBox( data )
 	end
 
 	if ( data.cvars ) then
-		for k, v in pairs( data.cvars ) do
+		for _, v in pairs( data.cvars ) do
 			ctrl:AddConVar( v )
 		end
 	end
@@ -855,7 +855,7 @@ local COLOUR_CIRCLE = {}
 function COLOUR_CIRCLE:Init()
 	local H = attachHCvar:GetInt()
 	local S = attachSCvar:GetInt()
-	self:SetColor( H,S )
+	self:SetColor( H, S )
 end
 
 function COLOUR_CIRCLE:TranslateValues( x, y )
@@ -882,7 +882,7 @@ end
 
 function COLOUR_CIRCLE:SetColor( H, S )
 	self.H, self.S = H, S
-	-- local x, y
+
 	local length = S / 2
 	local angle = math.rad( H - 270 )
 
@@ -897,7 +897,7 @@ function COLOUR_CIRCLE:SetColor( H, S )
 	return x, y
 end
 
-function COLOUR_CIRCLE:OnChange( H, S )
+function COLOUR_CIRCLE:OnChange()
 	-- Overwrite in main body
 end
 
@@ -915,7 +915,7 @@ function HSV_COLOUR_CONTROL:Init()
 		self.ColorMixer:SetPos( 0, 35 )
 		self.ColorMixer:SetSize( 250, 150 )
 		self.ColorMixer:SetPalette( false )
-		self.ColorMixer.ValueChanged = function( panel, color )
+		self.ColorMixer.ValueChanged = function( _, color )
 			local H, S, V = ColorToHSV( color )
 			local A = color.a or 255
 			-- PrintTable( color ) -- print( tostring( color ) )
@@ -1034,8 +1034,7 @@ function HSV_COLOUR_CONTROL:GetColor()
 	return H, S, V, A
 end
 
-function HSV_COLOUR_CONTROL:Paint( w, h )
-
+function HSV_COLOUR_CONTROL:Paint()
 end
 
 vgui.Register("PA_ColourControl", HSV_COLOUR_CONTROL, "DPanel")
@@ -1059,7 +1058,7 @@ function CONSTRUCT_MULTISELECT:Init()
 		self.list_points:SetTooltip( "Double click to deselect" )
 		self.list_points:SetPos(20, 30)
 		self.list_points:SetMultiSelect(true)
-		self.list_points.DoDoubleClick = function( Line, LineID )
+		self.list_points.DoDoubleClick = function()
 			self.list_points:ClearSelection()
 		end
 
@@ -1073,7 +1072,7 @@ function CONSTRUCT_MULTISELECT:Init()
 		self.list_lines:SetTooltip( "Double click to deselect" )
 		self.list_lines:SetPos(20, 30)
 		self.list_lines:SetMultiSelect(true)
-		self.list_lines.DoDoubleClick = function( Line, LineID )
+		self.list_lines.DoDoubleClick = function()
 			self.list_lines:ClearSelection()
 		end
 
@@ -1087,7 +1086,7 @@ function CONSTRUCT_MULTISELECT:Init()
 		self.list_planes:SetTooltip( "Double click to deselect" )
 		self.list_planes:SetPos(20, 30)
 		self.list_planes:SetMultiSelect(true)
-		self.list_planes.DoDoubleClick = function( Line, LineID )
+		self.list_planes.DoDoubleClick = function()
 			self.list_planes:ClearSelection()
 		end
 
@@ -1120,21 +1119,21 @@ function CONSTRUCT_MULTISELECT:Init()
 		self.button_attach:SetFunction( function()
 			local ID
 
-			for k, v in pairs( self.list_points:GetSelected() ) do
+			for _, v in pairs( self.list_points:GetSelected() ) do
 				ID = v:GetID()
 				if PrecisionAlign.Functions.construct_exists( "Point", ID ) then
 					PrecisionAlign.Functions.attach_point( ID, PrecisionAlign.ActiveEnt )
 				end
 			end
 
-			for k, v in pairs( self.list_lines:GetSelected() ) do
+			for _, v in pairs( self.list_lines:GetSelected() ) do
 				ID = v:GetID()
 				if PrecisionAlign.Functions.construct_exists( "Line", ID ) then
 					PrecisionAlign.Functions.attach_line( ID, PrecisionAlign.ActiveEnt )
 				end
 			end
 
-			for k, v in pairs( self.list_planes:GetSelected() ) do
+			for _, v in pairs( self.list_planes:GetSelected() ) do
 				ID = v:GetID()
 				if PrecisionAlign.Functions.construct_exists( "Plane", ID ) then
 					PrecisionAlign.Functions.attach_plane( ID, PrecisionAlign.ActiveEnt )
@@ -1152,17 +1151,17 @@ function CONSTRUCT_MULTISELECT:Init()
 		self.button_delete:SetFunction( function()
 			local ID
 
-			for k, v in pairs( self.list_points:GetSelected() ) do
+			for _, v in pairs( self.list_points:GetSelected() ) do
 				ID = v:GetID()
 				PrecisionAlign.Functions.delete_point( ID )
 			end
 
-			for k, v in pairs( self.list_lines:GetSelected() ) do
+			for _, v in pairs( self.list_lines:GetSelected() ) do
 				ID = v:GetID()
 				PrecisionAlign.Functions.delete_line( ID )
 			end
 
-			for k, v in pairs( self.list_planes:GetSelected() ) do
+			for _, v in pairs( self.list_planes:GetSelected() ) do
 				ID = v:GetID()
 				PrecisionAlign.Functions.delete_plane( ID )
 			end
@@ -1207,21 +1206,21 @@ function CONSTRUCT_MULTISELECT:GetSelection()
 	selection.lines = {}
 	selection.planes = {}
 
-	for k, v in pairs( self.list_points:GetSelected() ) do
+	for _, v in pairs( self.list_points:GetSelected() ) do
 		local ID = v:GetID()
 		if PrecisionAlign.Functions.construct_exists( "Point", ID  ) then
 			table.insert( selection.points, ID )
 		end
 	end
 
-	for k, v in pairs( self.list_lines:GetSelected() ) do
+	for _, v in pairs( self.list_lines:GetSelected() ) do
 		local ID = v:GetID()
 		if PrecisionAlign.Functions.construct_exists( "Line", ID  ) then
 			table.insert( selection.lines, ID )
 		end
 	end
 
-	for k, v in pairs( self.list_planes:GetSelected() ) do
+	for _, v in pairs( self.list_planes:GetSelected() ) do
 		local ID = v:GetID()
 		if PrecisionAlign.Functions.construct_exists( "Plane", ID  ) then
 			table.insert( selection.planes, ID )
@@ -1561,7 +1560,7 @@ function TOOL_LIST:Init()
 
 		local DrawColour = DrawColourOutline
 
-		line.Paint = function( w, h )
+		line.Paint = function()
 			if line:IsSelected() then
 				DrawColour.a = 150
 			else
@@ -1822,11 +1821,11 @@ local text_min, text_max = 1, 4500
 
 local draw_attachments = LocalPlayer():GetInfo( PA_ .. "draw_attachments" )
 
-cvars.AddChangeCallback( PA_ .. "size_point", function( CVar, Prev, New ) point_size_min = tonumber(math.max(New, 1)); point_size_max = tonumber(New) * 1000 end )
-cvars.AddChangeCallback( PA_ .. "size_line_start",  function( CVar, Prev, New ) line_size_start = tonumber(New) end  )
-cvars.AddChangeCallback( PA_ .. "size_line_end",  function( CVar, Prev, New ) line_size_min = tonumber(New); line_size_max  = line_size_min * 1000 end  )
-cvars.AddChangeCallback( PA_ .. "size_plane", function( CVar, Prev, New ) plane_size = tonumber(New) end  )
-cvars.AddChangeCallback( PA_ .. "size_plane_normal", function( CVar, Prev, New ) plane_size_normal = tonumber(New) end  )
+cvars.AddChangeCallback( PA_ .. "size_point", function( _, _, New ) point_size_min = tonumber(math.max(New, 1)); point_size_max = tonumber(New) * 1000 end )
+cvars.AddChangeCallback( PA_ .. "size_line_start",  function( _, _, New ) line_size_start = tonumber(New) end  )
+cvars.AddChangeCallback( PA_ .. "size_line_end",  function( _, _, New ) line_size_min = tonumber(New); line_size_max  = line_size_min * 1000 end  )
+cvars.AddChangeCallback( PA_ .. "size_plane", function( _, _, New ) plane_size = tonumber(New) end  )
+cvars.AddChangeCallback( PA_ .. "size_plane_normal", function( _, _, New ) plane_size_normal = tonumber(New) end  )
 
 -- Manage attachment line colour changes
 local H = attachHCvar:GetInt()
@@ -1837,7 +1836,7 @@ local attachcolourHSV = { h = H, s = S, v = V, a = A }
 local attachcolourRGB = HSVToColor( H, S, V )
 attachcolourRGB.a = A
 
-local function SetAttachColour(CVar, Prev, New)
+local function SetAttachColour(CVar, _, New)
 	if CVar == PA_ .. "attachcolour_h" then
 		attachcolourHSV.h = New
 	elseif CVar == PA_ .. "attachcolour_s" then
@@ -1869,7 +1868,7 @@ local function inview( pos2D )
 end
 
 -- HUD draw function
-local function precision_align_draw( w, h)
+local function precision_align_draw()
 	local playerpos = LocalPlayer():GetShootPos()
 
 	-- Points
@@ -1938,9 +1937,9 @@ local function precision_align_draw( w, h)
 					end
 				else
 					if math.abs(normal.z) < 0.9 then
-						dir1 = (normal:Cross(Vector(0,0,1))):GetNormal()
+						dir1 = (normal:Cross(Vector(0, 0, 1))):GetNormal()
 					else
-						dir1 = (normal:Cross(Vector(1,0,0))):GetNormal()
+						dir1 = (normal:Cross(Vector(1, 0, 0))):GetNormal()
 					end
 				end
 
@@ -2010,19 +2009,12 @@ local function precision_align_draw( w, h)
 					local dir1, dir2
 					if IsValid( v.entity ) then
 						local up = v.entity:GetUp()
-						if math.abs( normal:Dot( up ) ) < 0.9 then
-							dir1 = ( normal:Cross( up ) ):GetNormal()
-						else
-							dir1 = ( normal:Cross( v.entity:GetForward() ) ):GetNormal()
-						end
+						dir1 = math.abs( normal:Dot( up ) ) < 0.9 and up or v.entity:GetForward()
 					else
-						if math.abs( normal.z ) < 0.9 then
-							dir1 = ( normal:Cross( Vector( 0, 0, 1 ) ) ):GetNormal()
-						else
-							dir1 = ( normal:Cross( Vector( 1, 0, 0 ) ) ):GetNormal()
-						end
+						dir1 = math.abs( normal.z ) < 0.9 and Vector( 0, 0, 1 ) or Vector( 1, 0, 0 )
 					end
 
+					dir1 = ( normal:Cross( dir1 ) ):GetNormal()
 					dir2 = ( dir1:Cross( normal ) ):GetNormal() * plane_size
 					dir1 = dir1 * plane_size
 

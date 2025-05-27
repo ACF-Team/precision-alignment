@@ -4,6 +4,7 @@ local PA_ = PA .. "_"
 
 PrecisionAlign = PrecisionAlign or {}
 PrecisionAlign.Functions = PrecisionAlign.Functions or {}
+PrecisionAlign.Version = 10
 
 PrecisionAlign.Points = {}
 PrecisionAlign.Lines = {}
@@ -14,6 +15,12 @@ PrecisionAlign.SelectedLine = 1
 PrecisionAlign.SelectedPlane = 1
 
 PrecisionAlign.ActiveEnt = nil
+
+do -- Backwards compatibility for Prop Mover
+	PA_funcs = PrecisionAlign.Functions
+	PA_selected_point = PrecisionAlign.SelectedPoint
+	PA_selected_line = PrecisionAlign.SelectedLine
+end
 
 -- Initialize tables, set defaults
 for i = 1, 9 do
@@ -239,7 +246,7 @@ PrecisionAlign.Functions.delete_point = function( point )
 end
 
 PrecisionAlign.Functions.delete_points = function()
-	for k, v in ipairs ( PrecisionAlign.Points ) do
+	for k in ipairs ( PrecisionAlign.Points ) do
 		PrecisionAlign.Points[k] = {visible = true}
 	end
 	Message("All points cleared")
@@ -283,8 +290,8 @@ end
 
 PrecisionAlign.Functions.point_function_average = function( points_table )
 	local i = 0
-	local vec = Vector(0,0,0)
-	for k, v in pairs (points_table) do
+	local vec = Vector(0, 0, 0)
+	for _, v in pairs(points_table) do
 		local point_temp = PrecisionAlign.Functions.point_global(v:GetID())
 		if point_temp then
 			i = i + 1
@@ -429,7 +436,7 @@ PrecisionAlign.Functions.delete_line = function( line )
 end
 
 PrecisionAlign.Functions.delete_lines = function()
-	for k, v in ipairs (PrecisionAlign.Lines) do
+	for k in ipairs(PrecisionAlign.Lines) do
 		PrecisionAlign.Lines[k] = {visible = true}
 	end
 	Message("All lines cleared")
@@ -582,7 +589,7 @@ PrecisionAlign.Functions.delete_plane = function( plane )
 end
 
 PrecisionAlign.Functions.delete_planes = function()
-	for k, v in ipairs (PrecisionAlign.Planes) do
+	for k in ipairs(PrecisionAlign.Planes) do
 		PrecisionAlign.Planes[k] = {visible = true}
 	end
 	Message("All planes cleared")
@@ -884,13 +891,13 @@ end
 -- Rotate angle by world angles
 PrecisionAlign.Functions.rotate_world = function( ang, rotang )
 	if rotang.p ~= 0 then
-		ang:RotateAroundAxis( Vector(0,1,0), rotang.p )
+		ang:RotateAroundAxis( Vector(0, 1, 0), rotang.p )
 	end
 	if rotang.y ~= 0 then
-		ang:RotateAroundAxis( Vector(0,0,1), rotang.y )
+		ang:RotateAroundAxis( Vector(0, 0, 1), rotang.y )
 	end
 	if rotang.r ~= 0 then
-		ang:RotateAroundAxis( Vector(1,0,0), rotang.r )
+		ang:RotateAroundAxis( Vector(1, 0, 0), rotang.r )
 	end
 
 	return ang
@@ -1005,7 +1012,7 @@ PrecisionAlign.Functions.rotate_line_plane_parallel = function( pivot, axis, lin
 	local MT = matrix_transpose(M)
 
 	-- Now we just have to set Z = 0 after transform
-	-- local normal2 = Vector(0,0,1)
+	-- local normal2 = Vector(0, 0, 1)
 	local axisdir2 = matrix_x_vector( M, axisdir )
 	local linedir2 = matrix_x_vector( M, linedir1 )
 
@@ -1121,7 +1128,7 @@ end
 
 
 -- Mirror about selected plane
-PrecisionAlign.Functions.plane_mirror_entity = function( planeID, activeent )
+PrecisionAlign.Functions.plane_mirror_entity = function( planeID )
 	local plane = PrecisionAlign.Functions.plane_global( planeID )
 	local origin = plane.origin
 	local normal = plane.normal
