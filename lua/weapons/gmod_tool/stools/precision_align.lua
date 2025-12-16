@@ -127,6 +127,7 @@ end
 
 if SERVER then
 	function TOOL:SendClickData( point, normal, ent )
+		PrecisionAlign.SendServersideCorrection(ent, self:GetOwner())
 		net.Start( PA_ .. "click" )
 
 		-- Send vectors using floats - was losing precision using just vectors
@@ -152,6 +153,8 @@ if SERVER then
 	function TOOL:SetActive( ent )
 		local ply = self:GetOwner()
 		local activeent = ply.PrecisionAlign_ActiveEnt
+
+		PrecisionAlign.SendServersideCorrection(ent, self:GetOwner())
 
 		local function Deselect( oldent )
 			if IsValid( oldent ) and oldent.PA then
@@ -269,7 +272,7 @@ function TOOL:GetClickPosition(trace)
 	if Pos then return Pos end
 
 	if not IsValid(Phys) or not IsValid(Ent) or Ent:IsWorld() then
-		Pos = trace.HitPos
+		Pos = PrecisionAlign.GetTraceHitPos(trace)
 	elseif Edge_Snap or Centre_Snap then
 		local HitPosL = Ent:WorldToLocal( trace.HitPos )
 		local BoxMin, BoxMax = Phys:GetAABB()
@@ -332,10 +335,9 @@ function TOOL:GetClickPosition(trace)
 				NewPosL.z = EdgePosL.z
 			end
 		end
-
-		Pos = Ent:LocalToWorld(NewPosL)
+		Pos = Ent:PA_LocalToWorld(NewPosL)
 	else
-		Pos = trace.HitPos
+		Pos = PrecisionAlign.GetTraceHitPos(trace)
 	end
 
 	return Pos

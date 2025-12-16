@@ -363,6 +363,18 @@ function POINTS_TAB:Init()
 
 	AddMenuText( "Point Adjustment", 10, 5, self )
 
+	net.Receive("PA_serverside_listview", function()
+		local listview = net.ReadInt(8)
+		local vec = Vector(0, 0, 0)
+		net.ReadEntity()
+		vec[1] = net.ReadFloat()
+		vec[2] = net.ReadFloat()
+		vec[3] = net.ReadFloat()
+
+		if listview == 1 then self.sliders_origin1:SetValues( vec ) end
+		if listview == 2 then self.sliders_origin2:SetValues( vec ) end
+	end)
+
 	local function update_primary_listview()
 		local selection = self.list_primarypoint:GetSelectedLine()
 		if not selection then return false end
