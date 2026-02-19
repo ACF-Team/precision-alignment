@@ -52,20 +52,44 @@ do
 end
 
 local PA_manipulation_panel = false
-local function precision_align_open_panel_func()
+local function precision_align_open_panel_func(visible)
     if not PA_manipulation_panel then
         PA_manipulation_panel = vgui.Create( "PA_Manipulation_Frame" )
-    else
-        if PA_manipulation_panel:IsVisible() then
-            RememberCursorPosition()
-            PA_manipulation_panel:SetVisible(false)
-        else
-            PA_manipulation_panel:SetVisible(true)
-            RestoreCursorPosition()
+        if visible ~= false then
+            visible = true
         end
+    end
+    if type(visible) ~= "boolean" then
+        visible = not PA_manipulation_panel:IsVisible()
+    end
+    if visible then
+        PA_manipulation_panel:SetVisible(true)
+        PA_manipulation_panel:MakePopup() -- Focus the panel, RequestFocus wasn't working for me
+        RestoreCursorPosition()
+    else
+        RememberCursorPosition()
+        PA_manipulation_panel:SetVisible(false)
     end
 end
 concommand.Add( PA_ .. "open_panel", precision_align_open_panel_func )
+
+-- Open a particular tab in the manipulation panel
+local function OpenManipulationTab( tabName )
+    precision_align_open_panel_func( true )
+    local tab = PA_manipulation_panel[tabName]
+    PA_manipulation_panel.panel:SetActiveTab( tab.tab )
+
+    return tab
+end
+
+-- Perform double click function on a listview within the manipulation panel
+local function ListView_DoDoubleClick( panel, lineID )
+    panel:ClearSelection()
+
+    local line = panel:GetLine( lineID )
+    panel:SelectItem( line )
+    panel:DoDoubleClick( line, lineID )
+end
 
 do
     local PA_ToolModeSelector = {}
@@ -412,11 +436,14 @@ do
     local function SelectPoint(ID) PrecisionAlign.SelectedPoint = ID end
     local function SelectPoint2() end
     local function PointDbClick(ID)
-        local panel = PA_manipulation_panel.points_tab
-        Open_Manipulation_Tab(panel.tab)
-        Listview_DoDoubleClick(panel.list_primarypoint, ID)
+        local panel = OpenManipulationTab("points_tab")
+        ListView_DoDoubleClick(panel.list_primarypoint, ID)
     end
-    Points.list_primarypoint, Points.list_secondarypoint = Points:SetSelectionMode(SelectPoint, PointDbClick, SelectPoint2, PointDbClick) -- Assignment for backwards compat
+    local function Point2DbClick(ID)
+        local panel = OpenManipulationTab("points_tab")
+        ListView_DoDoubleClick(panel.list_secondarypoint, ID)
+    end
+    Points.list_primarypoint, Points.list_secondarypoint = Points:SetSelectionMode(SelectPoint, PointDbClick, SelectPoint2, Point2DbClick) -- Assignment for backwards compat
     do
         local View, Delete, Attach, DeleteAll, MoveEntity = Points:AddButtons(true)
         View:SetFunction(function()
@@ -495,10 +522,13 @@ do
     CPanel.line_window = Lines
     CPanel:AddItem(Lines)
     Lines:SetConstructType(PrecisionAlign.CONSTRUCT_LINE)
+
     local function SelectLine(ID) PrecisionAlign.SelectedLine = ID end
-    local function SelectLine2() end
-    local function LineDbClick() end
-    Lines.list_line = Lines:SetSelectionMode(SelectLine, LineDbClick, SelectLine2, LineDbClick) -- Assignment for backwards compat
+    local function LineDbClick(ID)
+        local panel = OpenManipulationTab("lines_tab")
+        ListView_DoDoubleClick(panel.list_primary, ID)
+    end
+    Lines.list_line = Lines:SetSelectionMode(SelectLine, LineDbClick) -- Assignment for backwards compat
     do
         local View, Delete, Attach, DeleteAll, MoveEntity = Lines:AddButtons(true)
         View:SetFunction(function()
@@ -540,10 +570,13 @@ do
     CPanel.plane_window = Planes
     CPanel:AddItem(Planes)
     Planes:SetConstructType(PrecisionAlign.CONSTRUCT_PLANE)
+
     local function SelectPlane(ID) PrecisionAlign.SelectedPlane = ID end
-    local function SelectPlane2() end
-    local function PlaneDbClick() end
-    Planes.list_plane = Planes:SetSelectionMode(SelectPlane, PlaneDbClick, SelectPlane2, PlaneDbClick) -- Assignment for backwards compat
+    local function PlaneDbClick(ID)
+        local panel = OpenManipulationTab("planes_tab")
+        ListView_DoDoubleClick(panel.list_primary, ID)
+    end
+    Planes.list_plane = Planes:SetSelectionMode(SelectPlane, PlaneDbClick) -- Assignment for backwards compat
     do
         local View, Delete, Attach, DeleteAll = Planes:AddButtons()
 
