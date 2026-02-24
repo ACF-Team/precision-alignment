@@ -52,23 +52,24 @@ do
 end
 
 local PA_manipulation_panel = false
-local function precision_align_open_panel_func(visible)
+local function precision_align_open_panel_func( visible )
     if not PA_manipulation_panel then
         PA_manipulation_panel = vgui.Create( "PA_Manipulation_Frame" )
         if visible ~= false then
             visible = true
         end
     end
-    if type(visible) ~= "boolean" then
+    if type( visible ) ~= "boolean" then
         visible = not PA_manipulation_panel:IsVisible()
     end
     if visible then
-        PA_manipulation_panel:SetVisible(true)
+        PA_manipulation_panel:SetVisible( true )
         PA_manipulation_panel:MakePopup() -- Focus the panel, RequestFocus wasn't working for me
+        PA_manipulation_panel:SetKeyboardInputEnabled( false )
         RestoreCursorPosition()
     else
         RememberCursorPosition()
-        PA_manipulation_panel:SetVisible(false)
+        PA_manipulation_panel:SetVisible( false )
     end
 end
 concommand.Add( PA_ .. "open_panel", precision_align_open_panel_func )

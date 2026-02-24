@@ -313,15 +313,21 @@ local function Queue_Process()
 		-- Nocollide each stacked ent with previous
 		if IsValid( last_ent ) and ply:CheckLimit( "constraints" ) then
 			local const = constraint.NoCollide( ent, last_ent )
-			ply:AddCount( "constraints", const )
-			ply:AddCleanup( "nocollide", const )
+
+			if const then
+				ply:AddCount( "constraints", const )
+				ply:AddCleanup( "nocollide", const )
+			end
 		end
 
 		-- Nocollide selected ent with final stacked ent
 		if ( not stack_queue[1] or stackID ~= stack_queue[1].stackID ) and ply:CheckLimit( "constraints" ) then
 			local const = constraint.NoCollide( ent, ent_table.data.Entity )
-			ply:AddCount( "constraints", const )
-			ply:AddCleanup( "nocollide", const )
+
+			if const then
+				ply:AddCount( "constraints", const )
+				ply:AddCleanup( "nocollide", const )
+			end
 
 			last_ent = nil
 		else
@@ -372,7 +378,7 @@ local function Stack_Loop()
 		local r, e = pcall( Queue_Process )
 
 		if not r then
-			ErrorNoHalt( e, "\n" )
+			ErrorNoHaltWithStack( e, "\n" )
 		elseif e then
 			-- Create undo if stack_IDs are different
 			if not stackID_old then
@@ -811,8 +817,10 @@ local function precision_align_constraint_func( _, ply )
 
 		const = constraint.Axis( Ent1, Ent2, 0, 0, LPos1, LPos2, forcelimit, torquelimit, friction, nocollide, axis )
 
-		ply:AddCount( "constraints", const )
-		ply:AddCleanup( "constraints", const )
+		if const then
+			ply:AddCount( "constraints", const )
+			ply:AddCleanup( "constraints", const )
+		end
 	elseif constraint_type == "Ballsocket" then
 		if not ply:CheckLimit( "constraints" ) then return false end
 
@@ -821,8 +829,10 @@ local function precision_align_constraint_func( _, ply )
 
 		const = constraint.Ballsocket( Ent2, Ent1, 0, 0, LPos1, forcelimit, 0, nocollide )
 
-		ply:AddCount( "constraints", const )
-		ply:AddCleanup( "constraints", const )
+		if const then
+			ply:AddCount( "constraints", const )
+			ply:AddCleanup( "constraints", const )
+		end
 	elseif constraint_type == "Ballsocket Advanced" then
 		if not ply:CheckLimit( "constraints" ) then return false end
 
@@ -842,8 +852,10 @@ local function precision_align_constraint_func( _, ply )
 
 		const = constraint.AdvBallsocket( Ent1, Ent2, 0, 0, LPos1, LPos2, forcelimit, torquelimit, xmin, ymin, zmin, xmax, ymax, zmax, xfric, yfric, zfric, onlyrotation, nocollide )
 
-		ply:AddCount( "constraints", const )
-		ply:AddCleanup( "constraints", const )
+		if const then
+			ply:AddCount( "constraints", const )
+			ply:AddCleanup( "constraints", const )
+		end
 	elseif constraint_type == "Elastic" then
 		if not ply:CheckLimit( "ropeconstraints" ) then return false end
 
@@ -859,8 +871,10 @@ local function precision_align_constraint_func( _, ply )
 
 		const = constraint.Elastic( Ent1, Ent2, 0, 0, LPos1, LPos2, constant, damping, rdamping, material, width, stretchonly, Color( colorR, colorG, colorB, 255 ) )
 
-		ply:AddCount( "ropeconstraints", const )
-		ply:AddCleanup( "ropeconstraints", const )
+		if const then
+			ply:AddCount( "ropeconstraints", const )
+			ply:AddCleanup( "ropeconstraints", const )
+		end
 	elseif constraint_type == "Rope" then
 		if not ply:CheckLimit( "ropeconstraints" ) then return false end
 
@@ -881,8 +895,10 @@ local function precision_align_constraint_func( _, ply )
 
 		const = constraint.Rope( Ent1, Ent2, 0, 0, LPos1, LPos2, length, addlength, forcelimit, width, material, rigid, Color( colorR, colorG, colorB, 255 ) )
 
-		ply:AddCount( "ropeconstraints", const )
-		ply:AddCleanup( "ropeconstraints", const )
+		if const then
+			ply:AddCount( "ropeconstraints", const )
+			ply:AddCleanup( "ropeconstraints", const )
+		end
 	elseif constraint_type == "Slider" then
 		if not ply:CheckLimit( "ropeconstraints" ) then return false end
 
@@ -894,8 +910,10 @@ local function precision_align_constraint_func( _, ply )
 
 		const = constraint.Slider( Ent1, Ent2, 0, 0, LPos1, LPos2, width, material, Color( colorR, colorG, colorB, 255 ) )
 
-		ply:AddCount( "ropeconstraints", const )
-		ply:AddCleanup( "ropeconstraints", const )
+		if const then
+			ply:AddCount( "ropeconstraints", const )
+			ply:AddCleanup( "ropeconstraints", const )
+		end
 	elseif constraint_type == "Wire Hydraulic" then
 		if not ply:CheckLimit( "ropeconstraints" ) then return false end
 
@@ -918,10 +936,10 @@ local function precision_align_constraint_func( _, ply )
 		local rope
 		const, rope = MakeWireHydraulic( ply, Ent1, Ent2, 0, 0, LPos1, LPos2, width, material, speed, nil, stretchonly )
 
-		ply:AddCount( "ropeconstraints", const )
-		ply:AddCleanup( "ropeconstraints", const )
-
 		if const then
+			ply:AddCount( "ropeconstraints", const )
+			ply:AddCleanup( "ropeconstraints", const )
+
 			controller.MyId = controller:EntIndex()
 			const.MyCrtl = controller:EntIndex()
 			controller:SetConstraint( const, rope )
