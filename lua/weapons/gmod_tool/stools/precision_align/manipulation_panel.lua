@@ -65,7 +65,7 @@ function MANIPULATION_FRAME:Init()
 	self.btnMinim:SetVisible(false)
 	self:SetDeleteOnClose( false )
 	self:MakePopup()
-	self:SetKeyboardInputEnabled( false )
+	self:SetKeyboardInputEnabled( false ) -- NOTE: This is very important! Sprint/walk keybinds can't be used without this disabled!
 
 	surface.SetFont("DermaDefault")
 	local text = "Version: v" .. PrecisionAlign.Version
@@ -623,7 +623,7 @@ function POINTS_TAB:Init()
 
 	self.functions_button_pointsaverage = vgui.Create( "PA_Function_Button", self )
 		self.functions_button_pointsaverage:SetPos(650, 250)
-		self.functions_button_pointsaverage:SetText( "Centre of points" )
+		self.functions_button_pointsaverage:SetText( "Centre of Points" )
 		self.functions_button_pointsaverage:SetTooltip( "Set primary values to the centre (average) of the selected points" )
 		self.functions_button_pointsaverage:SetFunction( function()
 			local selection_table = {}

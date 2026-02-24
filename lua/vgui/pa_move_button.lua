@@ -37,13 +37,18 @@ function MOVE_BUTTON:SetHoverFunction(Hover, HoverEnter, HoverExit, ...)
 	end)
 end
 
-
 function MOVE_BUTTON:Think()
-	local alt = LocalPlayer():KeyDown( IN_WALK )
+	local locPly = LocalPlayer()
+	local alt = locPly:KeyDown( IN_WALK )
+	local shift = locPly:KeyDown( IN_SPEED )
+
 	if alt and not self.OldText then
 		self.OldText = self:GetText()
-		self:SetText("(ALT) Stack Entity")
-	elseif not alt and self.OldText then
+		self:SetText("(ALT) Stacking\nOptions")
+	elseif shift and not self.OldText then
+		self.OldText = self:GetText()
+		self:SetText("(SHIFT) Stack Entity")
+	elseif not alt and not shift and self.OldText then
 		self:SetText(self.OldText)
 		self.OldText = nil
 	end

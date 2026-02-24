@@ -115,7 +115,7 @@ if CLIENT then
 	language.Add("Tool.precision_align.name", "Precision Alignment")
 	language.Add("Tool.precision_align.desc", "Precision prop alignment tool")
 	language.Add("Tool.precision_align.left", "Place constructs")
-	language.Add("Tool.precision_align.right", "Select entity")
+	language.Add("Tool.precision_align.right", "Select entity (Shift to repeat last action)")
 	language.Add("Tool.precision_align.reload", "Open/close manipulation window")
 	language.Add("Tool.precision_align.0", "Primary: Place constructs, Secondary: Select entity, Reload: Open/close manipulation window")
 	language.Add("Tool.precision_align.1", "Click again to place line end point, right click to cancel")
