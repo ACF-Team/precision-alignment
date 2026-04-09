@@ -630,6 +630,7 @@ local function precision_align_rotate_func( ply, _, args )
 			else
 				local Parent = ent:GetParent()
 				ent:SetAngles( ent:LocalToWorldAngles( a ) )
+				localv = ent:WorldToLocal(v)
 				pos = pos + (v - ent:LocalToWorld(localv))
 				if IsValid(Parent) then
 					ent:SetPos(Parent:WorldToLocal(pos))
