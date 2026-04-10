@@ -953,13 +953,13 @@ local function precision_align_constraint_func( _, ply )
 		end
 
 		-- Remove the existing hydraulic constraint
-		if oldconstraint then
+		if IsValid( oldconstraint ) then
 			controller:DontDeleteOnRemove( oldconstraint )
 			oldconstraint:DontDeleteOnRemove( controller )
 			oldconstraint:Remove()
 		end
 
-		if oldrope then
+		if IsValid( oldrope ) then
 			controller:DontDeleteOnRemove( oldrope )
 			oldrope:DontDeleteOnRemove( controller )
 			oldrope:Remove()
