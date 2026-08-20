@@ -9,6 +9,7 @@ PrecisionAlign.SelectedPlane = 1
 
 PrecisionAlign.ActiveEnt = nil
 
+include("weapons/gmod_tool/stools/" .. PA .. "/primitives_panel.lua")
 include("weapons/gmod_tool/stools/" .. PA .. "/manipulation_panel.lua")
 
 local tooltypeCvar = GetConVar( PA_ .. "toolname" )
