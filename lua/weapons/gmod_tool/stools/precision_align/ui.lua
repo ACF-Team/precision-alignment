@@ -178,7 +178,7 @@ do
     function PA_ConstructList:Setup(Construct, Click, DbClick)
         self.construct_type = Construct
         local Name = PrecisionAlign.GetConstructName(Construct)
-        for I = 1, 9 do
+        for I = 1, PrecisionAlign.MAX_CONSTRUCTS do
             local Line = self:AddLine(Name .. " " .. I)
             Line.Indicator = Line:Add "PA_Indicator"
         end

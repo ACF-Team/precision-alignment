@@ -170,7 +170,7 @@ function DISPLAYS_TAB:Init()
 			keytable[ selection[k]:GetID() ] = true
 		end
 
-		for I = 1, 9 do
+		for I = 1, PrecisionAlign.MAX_CONSTRUCTS do
 			if keytable[I] then
 				construct_table[I].visible = true
 			else

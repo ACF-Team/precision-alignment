@@ -502,7 +502,7 @@ end
 local function DrawIndicators( x, y, w, curToolType )
 	local radius = 8
 	local diameter = radius * 2 + 1
-	local separation = (w - 4) / 9
+	local separation = (w - 4) / PrecisionAlign.MAX_CONSTRUCTS
 
 	-- Background
 	draw.RoundedBox( 10, x, y, w, diameter + 15, Color(50, 50, 50, 100) )
@@ -513,7 +513,7 @@ local function DrawIndicators( x, y, w, curToolType )
 	-- Indicators
 	local IndicatorColour
 	local ConstructNum = GetConstructNum( curToolType )
-	for i = 1, 9 do
+	for i = 1, PrecisionAlign.MAX_CONSTRUCTS do
 		-- Draw construct selection ring
 		if i == ConstructNum then
 			draw.RoundedBox( radius + 4, xpos - 4, ypos - 4, diameter + 8, diameter + 8, Color(255, 255, 255, 255) )

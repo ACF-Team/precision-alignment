@@ -5,7 +5,7 @@ end
 
 local PA = PrecisionAlign.PA
 function PrecisionAlign.SelectNextPoint()
-    if PrecisionAlign.SelectedPoint < 9 and PrecisionAlign.Functions.construct_exists( PrecisionAlign.CONSTRUCT_POINT, PrecisionAlign.SelectedPoint ) then
+    if PrecisionAlign.SelectedPoint < PrecisionAlign.MAX_CONSTRUCTS and PrecisionAlign.Functions.construct_exists( PrecisionAlign.CONSTRUCT_POINT, PrecisionAlign.SelectedPoint ) then
         PrecisionAlign.SelectedPoint = PrecisionAlign.SelectedPoint + 1
         local dlist_points = controlpanel.Get( PA ).point_window.list_primarypoint
         dlist_points:ClearSelection()

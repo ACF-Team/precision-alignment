@@ -22,7 +22,7 @@ do -- Backwards compatibility for Prop Mover
 end
 
 -- Initialize tables, set defaults
-for i = 1, 9 do
+for i = 1, PrecisionAlign.MAX_CONSTRUCTS do
 	PrecisionAlign.Points[i] = {visible = true}
 	PrecisionAlign.Lines[i] = {visible = true}
 	PrecisionAlign.Planes[i] = {visible = true}

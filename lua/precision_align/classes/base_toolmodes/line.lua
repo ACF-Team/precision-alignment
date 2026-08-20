@@ -5,7 +5,7 @@ end
 
 local PA = PrecisionAlign.PA
 function PrecisionAlign.SelectNextLine()
-    if PrecisionAlign.SelectedLine < 9 and PrecisionAlign.Functions.construct_exists( PrecisionAlign.CONSTRUCT_LINE, PrecisionAlign.SelectedLine ) then
+    if PrecisionAlign.SelectedLine < PrecisionAlign.MAX_CONSTRUCTS and PrecisionAlign.Functions.construct_exists( PrecisionAlign.CONSTRUCT_LINE, PrecisionAlign.SelectedLine ) then
         PrecisionAlign.SelectedLine = PrecisionAlign.SelectedLine + 1
         local dlist_lines = controlpanel.Get( PA ).line_window.list_line
         dlist_lines:ClearSelection()

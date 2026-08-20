@@ -5,7 +5,7 @@ end
 
 local PA = PrecisionAlign.PA
 function PrecisionAlign.SelectNextPlane()
-    if PrecisionAlign.SelectedPlane < 9 and PrecisionAlign.Functions.construct_exists( PrecisionAlign.CONSTRUCT_PLANE, PrecisionAlign.SelectedPlane ) then
+    if PrecisionAlign.SelectedPlane < PrecisionAlign.MAX_CONSTRUCTS and PrecisionAlign.Functions.construct_exists( PrecisionAlign.CONSTRUCT_PLANE, PrecisionAlign.SelectedPlane ) then
         PrecisionAlign.SelectedPlane = PrecisionAlign.SelectedPlane + 1
         local dlist_planes = controlpanel.Get( PA ).plane_window.list_plane
         dlist_planes:ClearSelection()

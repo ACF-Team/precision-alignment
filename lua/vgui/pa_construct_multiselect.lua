@@ -144,7 +144,7 @@ end
 
 function CONSTRUCT_MULTISELECT:SelectAll( value )
 	local function SelectLines( panel, construct_table )
-		for id = 1, 9 do
+		for id = 1, PrecisionAlign.MAX_CONSTRUCTS do
 			local line = panel.Sorted[ id ]
 			line:SetSelected( value )
 			if self.visibility then
