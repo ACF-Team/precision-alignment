@@ -4,7 +4,7 @@
 -- as vertices. Soft dependency: if that addon isn't loaded, the net message
 -- just gets dropped, since the primitive_convex_hull class won't exist to check for.
 
-local PA, PA_ = PrecisionAlign.PA, PrecisionAlign.PA_
+local PA_ = PrecisionAlign.PA_
 
 util.AddNetworkString( PA_ .. "primitive" )
 
