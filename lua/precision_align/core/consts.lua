@@ -2,6 +2,12 @@ PrecisionAlign.CONSTRUCT_POINT = 0
 PrecisionAlign.CONSTRUCT_LINE  = 1
 PrecisionAlign.CONSTRUCT_PLANE = 2
 
+-- Number of point/line/plane slots in the construct stack.
+PrecisionAlign.MAX_CONSTRUCTS = 10
+
+-- Per-player cooldown, in seconds, between primitive_convex_hull spawns from the Primitives tab.
+PrecisionAlign.PRIMITIVE_SPAWN_COOLDOWN = 0.1
+
 PrecisionAlign.TOOLMODE_BACKGROUND_COLOR            = Color(50, 50, 50, 50)
 PrecisionAlign.TOOLMODE_BACKGROUND_COLOR_BACKGROUND = Color(103, 100, 110, 255)
 PrecisionAlign.TOOLMODE_BACKGROUND_COLOR_DISABLED   = Color(160, 160, 160, 255)

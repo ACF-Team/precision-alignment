@@ -54,7 +54,7 @@ local BGColor_Rotation   = PrecisionAlign.TOOLMODE_BACKGROUND_COLOR_ROTATION
 
 local MANIPULATION_FRAME = {}
 function MANIPULATION_FRAME:Init()
-	self:SetSize(900, 500)
+	self:SetSize(980, 500)
 	self:Center()
 	self:SetTitle( "Precision Alignment Manipulation Panel" )
 	self:SetVisible( true )
@@ -83,6 +83,7 @@ function MANIPULATION_FRAME:Init()
 	self.rotation_tab = vgui.Create( "PA_Rotation_Tab", self.body )
 	self.rotation_functions_tab = vgui.Create( "PA_Rotation_Functions_Tab", self.body )
 	self.constraints_tab = vgui.Create( "PA_Constraints_Tab", self.body )
+	self.primitives_tab = vgui.Create( "PA_Primitives_Tab", self.body )
 
 	self.panel:AddSheet( "Display Options", self.displays_tab, "icon16/picture_edit.png", false, false )
 	self.panel:AddSheet( "Points", self.points_tab, "icon16/add.png", false, false )
@@ -96,10 +97,11 @@ function MANIPULATION_FRAME:Init()
 	self.panel:AddSheet( "Rotation", self.rotation_tab, "icon16/arrow_refresh.png", false, false )
 	self.panel:AddSheet( "Rotation Functions", self.rotation_functions_tab, "icon16/arrow_refresh.png", false, false )
 	self.panel:AddSheet( "Constraints", self.constraints_tab, "icon16/anchor.png", false, false )
+	self.panel:AddSheet( "Primitives", self.primitives_tab, "icon16/shape_square.png", false, false )
 
 	-- Help button
 	self.button_help = vgui.Create( "PA_Function_Button", self )
-		self.button_help:SetPos( 810, 30 )
+		self.button_help:SetPos( 890, 30 )
 		self.button_help:SetSize( 60, 20 )
 		self.button_help:SetText( "Help" )
 		self.button_help:SetTooltip( "Open online help using the Steam in-game browser." )
@@ -142,7 +144,7 @@ vgui.Register("PA_Manipulation_Body", MANIPULATION_BODY, "DPanel")
 local MANIPULATION_PANEL = {}
 function MANIPULATION_PANEL:Init()
 	self:SetPos(0, 5)
-	self:SetSize(900, 470)
+	self:SetSize(980, 470)
 end
 
 function MANIPULATION_PANEL:Paint()
@@ -168,7 +170,7 @@ function DISPLAYS_TAB:Init()
 			keytable[ selection[k]:GetID() ] = true
 		end
 
-		for I = 1, 9 do
+		for I = 1, PrecisionAlign.MAX_CONSTRUCTS do
 			if keytable[I] then
 				construct_table[I].visible = true
 			else
