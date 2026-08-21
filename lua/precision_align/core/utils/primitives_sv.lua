@@ -11,9 +11,14 @@ util.AddNetworkString( PA_ .. "primitive" )
 local MIN_POINTS = 4
 local MAX_POINTS = 10
 
+local nextSpawn = {}
+
 net.Receive( PA_ .. "primitive", function( _, ply )
 	local count = net.ReadUInt( 8 )
 	if count < MIN_POINTS or count > MAX_POINTS then return end
+
+	if ( nextSpawn[ply] or 0 ) > SysTime() then return end
+	nextSpawn[ply] = SysTime() + PrecisionAlign.PRIMITIVE_SPAWN_COOLDOWN
 
 	local points = {}
 	for i = 1, count do
