@@ -1,7 +1,4 @@
--- Primitives Tab. Lets the user pick 4-10 PA points and spawn a
--- primitive_convex_hull entity (from the "primitive" addon) whose vertices are
--- those points. Soft dependency: if the primitive addon isn't loaded, the tab
--- still shows but the create button just warns instead of doing anything.
+-- Primitives Tab. Lets the user pick 3-10 PA points to spawn a primitive_shape cube (3) or primitive_convex_hull (4-10); warns instead if the "primitive" addon isn't loaded.
 --********************************************************************************************************************
 
 if SERVER then return end
@@ -20,8 +17,9 @@ local function AddMenuText( text, x, y, parent )
 	return Text
 end
 
-local MIN_POINTS = 4
+local MIN_POINTS = 3
 local MAX_POINTS = 10
+local CUBE_POINTS = 3
 
 local PRIMITIVES_TAB = {}
 function PRIMITIVES_TAB:Init()
@@ -36,11 +34,11 @@ function PRIMITIVES_TAB:Init()
 
 	self.list_points = vgui.Create( "PA_Construct_ListView", self.colour_panel )
 		self.list_points:Text( "Points", PrecisionAlign.CONSTRUCT_POINT, self.colour_panel )
-		self.list_points:SetTooltip( "Select 4-10 points to use as the convex hull's vertices" )
+		self.list_points:SetTooltip( "Select 3 points for a plate, or 4-10 points for a convex hull" )
 		self.list_points:SetPos( 20, 30 )
 		self.list_points:SetMultiSelect( true )
 
-	AddMenuText( "Primitive: Convex Hull", 330, 9, self )
+	AddMenuText( "Primitive: Cube / Convex Hull", 330, 9, self )
 
 	self.text_description = vgui.Create( "DLabel", self )
 		self.text_description:SetPos( 330, 36 )
@@ -49,8 +47,10 @@ function PRIMITIVES_TAB:Init()
 		self.text_description:SetContentAlignment( 7 )
 		self.text_description:SetTextColor( self:GetSkin().Colours.Label.Dark )
 		self.text_description:SetText(
-			"Select 4 to 10 points, then hit Create.\n\n" ..
-			"The physics engine builds the hull, so point order doesn't matter.\n\n" ..
+			"Select 3 points for a plate (1 unit thick cube):\n" ..
+			"An edge will be aligned from points 1 to 2, and will stretch to fit 3.\n\n" ..
+			"Select 4-10 points for a convex hull:\n" ..
+			"The order of the points do not matter.\n\n" ..
 			"Requires the \"primitive\" addon."
 		)
 
@@ -58,7 +58,7 @@ function PRIMITIVES_TAB:Init()
 		self.button_create:SetPos( 330, 378 )
 		self.button_create:SetSize( 191, 50 )
 		self.button_create:SetText( "Create Primitive" )
-		self.button_create:SetTooltip( "Spawn a convex hull from the selected points" )
+		self.button_create:SetTooltip( "Spawn a cube (3 points) or convex hull (4-10 points) from the selected points" )
 		self.button_create:SetFunction( function()
 			local selected = self.list_points:GetSelected()
 
@@ -71,12 +71,18 @@ function PRIMITIVES_TAB:Init()
 			end
 
 			if #points < MIN_POINTS then
-				Warning( "Select at least " .. MIN_POINTS .. " defined points" )
+				PrecisionAlign.Warning( "Select at least " .. MIN_POINTS .. " defined points" )
 				return false
 			end
 
 			if #points > MAX_POINTS then
-				Warning( "Select at most " .. MAX_POINTS .. " points" )
+				PrecisionAlign.Warning( "Select at most " .. MAX_POINTS .. " points" )
+				return false
+			end
+
+			local entity_class = #points == CUBE_POINTS and "primitive_shape" or "primitive_convex_hull"
+			if not scripted_ents.GetStored( entity_class ) then
+				PrecisionAlign.Warning( "The \"primitive\" addon is not installed" )
 				return false
 			end
 

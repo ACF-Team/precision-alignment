@@ -8,6 +8,9 @@ PrecisionAlign.MAX_CONSTRUCTS = 10
 -- Per-player cooldown, in seconds, between primitive_convex_hull spawns from the Primitives tab.
 PrecisionAlign.PRIMITIVE_SPAWN_COOLDOWN = 0.1
 
+-- Thickness (z size) of the cube spawned when only 3 points are selected in the Primitives tab.
+PrecisionAlign.PRIMITIVE_CUBE_THICKNESS = 1
+
 PrecisionAlign.TOOLMODE_BACKGROUND_COLOR            = Color(50, 50, 50, 50)
 PrecisionAlign.TOOLMODE_BACKGROUND_COLOR_BACKGROUND = Color(103, 100, 110, 255)
 PrecisionAlign.TOOLMODE_BACKGROUND_COLOR_DISABLED   = Color(160, 160, 160, 255)
