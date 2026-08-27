@@ -232,8 +232,8 @@ local function precision_align_draw()
             local point_temp = PrecisionAlign.Functions.point_global(k)
             if point_temp then
                 local origin = point_temp.origin
-                local point = origin:ToScreen()
-                if inview( point ) then
+                local point = ClippedToScreen(origin, origin)
+                if point and inview( point ) then
                     local distance = playerpos:Distance( origin )
                     local size = math.Clamp( point_size_max / distance, point_size_min, point_size_max )
                     local text_dist = math.Clamp(text_max / distance, text_min, text_max)
@@ -247,8 +247,10 @@ local function precision_align_draw()
 
                     -- Draw attachment line
                     if draw_attachments and IsValid(v.entity) then
-                        local entpos = v.entity:GetPos():ToScreen()
-                        pushLine(point.x, point.y, entpos.x, entpos.y, 2, attachcolourRGB)
+                        local attach_start, attach_end = ClippedToScreen(origin, v.entity:GetPos())
+                        if attach_start and attach_end then
+                            pushLine(attach_start.x, attach_start.y, attach_end.x, attach_end.y, 2, attachcolourRGB)
+                        end
                     end
                     renderLines()
                 end
@@ -266,8 +268,8 @@ local function precision_align_draw()
                 local startpoint = line_temp.startpoint
                 local endpoint = line_temp.endpoint
 
-                local line_start = startpoint:ToScreen()
-                local line_end = endpoint:ToScreen()
+                local line_start, line_end = ClippedToScreen(startpoint, endpoint)
+                if line_start and line_end then
 
                 local distance1 = playerpos:Distance( startpoint )
                 local distance2 = playerpos:Distance( endpoint )
@@ -299,15 +301,13 @@ local function precision_align_draw()
                 dir2 = (dir1:Cross(normal)):GetNormal() * line_size_start
                 dir1 = dir1 * line_size_start
 
-                local v1 = (startpoint + dir1 + dir2):ToScreen()
-                local v2 = (startpoint - dir1 + dir2):ToScreen()
-                local v3 = (startpoint - dir1 - dir2):ToScreen()
-                local v4 = (startpoint + dir1 - dir2):ToScreen()
+                local x1a, x1b = ClippedToScreen(startpoint + dir1 + dir2, startpoint - dir1 - dir2)
+                local x2a, x2b = ClippedToScreen(startpoint - dir1 + dir2, startpoint + dir1 - dir2)
 
                 -- Start X
-                if inview( line_start ) then
-                    pushLine(v1.x, v1.y, v3.x, v3.y)
-                    pushLine(v2.x, v2.y, v4.x, v4.y)
+                if x1a and x1b and x2a and x2b then
+                    pushLine(x1a.x, x1a.y, x1b.x, x1b.y)
+                    pushLine(x2a.x, x2a.y, x2b.x, x2b.y)
 
                     -- Line flush
                     renderLines()
@@ -331,11 +331,14 @@ local function precision_align_draw()
 
                 -- Draw attachment line
                 if draw_attachments and IsValid(v.entity) then
-                    local entpos = v.entity:GetPos():ToScreen()
-                    pushLine( line_start.x, line_start.y, entpos.x, entpos.y, 2, attachcolourRGB )
+                    local attach_start, attach_end = ClippedToScreen(startpoint, v.entity:GetPos())
+                    if attach_start and attach_end then
+                        pushLine( attach_start.x, attach_start.y, attach_end.x, attach_end.y, 2, attachcolourRGB )
+                    end
                 end
 
                 renderLines()
+                end
             end
         end
     end
@@ -352,10 +355,8 @@ local function precision_align_draw()
                 local normal = plane_temp.normal
 
                 -- Draw normal line
-                local line_start = origin:ToScreen()
-                if inview( line_start ) then
-
-                    local line_end = ( origin + normal * plane_size_normal ):ToScreen()
+                local line_start, line_end = ClippedToScreen( origin, origin + normal * plane_size_normal )
+                if line_start and line_end and inview( line_start ) then
 
                     local distance = playerpos:Distance( origin )
                     local text_dist = math.Clamp(text_max / distance, text_min, text_max)
@@ -379,16 +380,17 @@ local function precision_align_draw()
                     local p2 = origin - dir1 + dir2
                     local p3 = origin - dir1 - dir2
                     local p4 = origin + dir1 - dir2
-                    local v1 = p1:ToScreen()
-                    local v2 = p2:ToScreen()
-                    local v3 = p3:ToScreen()
-                    local v4 = p4:ToScreen()
+
+                    local e1a, e1b = ClippedToScreen( p1, p2 )
+                    local e2a, e2b = ClippedToScreen( p2, p3 )
+                    local e3a, e3b = ClippedToScreen( p3, p4 )
+                    local e4a, e4b = ClippedToScreen( p4, p1 )
 
                     beginLineStrip(lineSize, planecolour, color_black)
-                    pushLine( v1.x, v1.y, v2.x, v2.y, nil, nil, false )
-                    pushLine( v2.x, v2.y, v3.x, v3.y, nil, nil, false )
-                    pushLine( v3.x, v3.y, v4.x, v4.y, nil, nil, false )
-                    pushLine( v4.x, v4.y, v1.x, v1.y, nil, nil, false )
+                    if e1a and e1b then pushLine( e1a.x, e1a.y, e1b.x, e1b.y, nil, nil, false ) end
+                    if e2a and e2b then pushLine( e2a.x, e2a.y, e2b.x, e2b.y, nil, nil, false ) end
+                    if e3a and e3b then pushLine( e3a.x, e3a.y, e3b.x, e3b.y, nil, nil, false ) end
+                    if e4a and e4b then pushLine( e4a.x, e4a.y, e4b.x, e4b.y, nil, nil, false ) end
 
                     -- Line flush so the normal indicator overlaps correctly.
                     renderLines()
@@ -400,8 +402,10 @@ local function precision_align_draw()
                     -- Default
                     -- Draw attachment line
                     if draw_attachments and IsValid(v.entity) then
-                        local entpos = v.entity:GetPos():ToScreen()
-                        pushLine( line_start.x, line_start.y, entpos.x, entpos.y, 2, attachcolourRGB )
+                        local attach_start, attach_end = ClippedToScreen( origin, v.entity:GetPos() )
+                        if attach_start and attach_end then
+                            pushLine( line_start.x, line_start.y, attach_end.x, attach_end.y, 2, attachcolourRGB )
+                        end
                     end
 
                     renderLines()
