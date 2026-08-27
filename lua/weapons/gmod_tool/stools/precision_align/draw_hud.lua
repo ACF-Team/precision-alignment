@@ -23,6 +23,45 @@ local pointcolour = PrecisionAlign.GetConstructColor(PrecisionAlign.CONSTRUCT_PO
 local linecolour  = PrecisionAlign.GetConstructColor(PrecisionAlign.CONSTRUCT_LINE):Copy()
 local planecolour = PrecisionAlign.GetConstructColor(PrecisionAlign.CONSTRUCT_PLANE):Copy()
 
+local VECTOR, ANGLE = FindMetaTable("Vector"), FindMetaTable("Angle")
+-- Thank you github.com/Pugsworth: https://github.com/ACF-Team/precision-alignment/issues/14#issuecomment-4242933012
+local CachedViewSetup = {origin = Vector(0, 0, 0), angle = Angle(0, 0, 0)}
+local function RefreshCachedViewSetup()
+    CachedViewSetup = render.GetViewSetup()
+end
+local function ClippedToScreen(StartPos, EndPos)
+    local CamPos = CachedViewSetup.origin
+    local CamForward = ANGLE.Forward(CachedViewSetup.angle)
+
+    -- Use the near clipping plane to determine visibility instead of the ToScreen().visible property since that isn't reliable, especially if there was an error in a rendering hook (open issue).
+    local Epsilon = view.znear
+
+    local DotA = VECTOR.Dot(CamForward, StartPos - CamPos)
+    local DotB = VECTOR.Dot(CamForward, EndPos - CamPos)
+
+    -- Both points are culled by the near plane
+    if DotA < Epsilon and DotB < Epsilon then return nil end
+
+    -- Partial occlusion: perform clipping
+    if DotA < Epsilon or DotB < Epsilon then
+        local VecVisible = DotA >= Epsilon and StartPos or EndPos
+        local VecBehind = DotA < Epsilon and StartPos or EndPos
+
+        local DotVisible = VECTOR.Dot(CamForward, VecVisible - CamPos)
+        local DotBehind  = VECTOR.Dot(CamForward, VecBehind - CamPos)
+
+        -- Calculate the intersection factor to obtain a new world vector that would sit directly on the camera's znear plane.
+        -- This makes the occluded point always on or near enough to the actual screen that ToScreen can give valid results.
+        local T = (Epsilon - DotVisible) / (DotBehind - DotVisible)
+        local ClippedPoint = VecVisible + T * (VecBehind - VecVisible)
+
+        return VECTOR.ToScreen(VecVisible), VECTOR.ToScreen(ClippedPoint)
+    end
+
+    -- Otherwise fully visible
+    return VECTOR.ToScreen(StartPos), VECTOR.ToScreen(EndPos)
+end
+
 pointcolour:SetBrightness(0.98)
 pointcolour:SetSaturation(0.8)
 linecolour:SetBrightness(0.98)
@@ -184,7 +223,7 @@ end
 -- HUD draw function
 local function precision_align_draw()
     local playerpos = LocalPlayer():GetShootPos()
-
+    RefreshCachedViewSetup()
     -- Points
     for k, v in ipairs (PrecisionAlign.Points) do
         if v.visible and v.origin then
