@@ -25,16 +25,16 @@ local planecolour = PrecisionAlign.GetConstructColor(PrecisionAlign.CONSTRUCT_PL
 
 local VECTOR, ANGLE = FindMetaTable("Vector"), FindMetaTable("Angle")
 -- Thank you github.com/Pugsworth: https://github.com/ACF-Team/precision-alignment/issues/14#issuecomment-4242933012
-local CachedViewSetup = {origin = Vector(0, 0, 0), angle = Angle(0, 0, 0)}
+local CachedViewSetup = {origin = Vector(0, 0, 0), angles = Angle(0, 0, 0)}
 local function RefreshCachedViewSetup()
     CachedViewSetup = render.GetViewSetup()
 end
 local function ClippedToScreen(StartPos, EndPos)
     local CamPos = CachedViewSetup.origin
-    local CamForward = ANGLE.Forward(CachedViewSetup.angle)
+    local CamForward = ANGLE.Forward(CachedViewSetup.angles)
 
     -- Use the near clipping plane to determine visibility instead of the ToScreen().visible property since that isn't reliable, especially if there was an error in a rendering hook (open issue).
-    local Epsilon = view.znear
+    local Epsilon = CachedViewSetup.znear
 
     local DotA = VECTOR.Dot(CamForward, StartPos - CamPos)
     local DotB = VECTOR.Dot(CamForward, EndPos - CamPos)
