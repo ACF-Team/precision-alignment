@@ -1808,7 +1808,9 @@ local FUNCTIONS_TAB = {}
 function FUNCTIONS_TAB:Init()
 	self:CopyBounds( self:GetParent() )
 
-	local width = 148.3
+	-- Layout was hand-tuned for a 900-wide frame; scale it to whatever width the frame actually is
+	local scale = self:GetWide() / 900
+	local width = 148.3 * scale
 	local string_table = {"Point", "Line", "Plane"}
 	local construct_table = {PrecisionAlign.CONSTRUCT_POINT, PrecisionAlign.CONSTRUCT_LINE, PrecisionAlign.CONSTRUCT_PLANE}
 	local selection_lists = {}
@@ -1905,7 +1907,7 @@ function FUNCTIONS_TAB:Init()
 
 
 	self.button_set = vgui.Create( "PA_Function_Button", self )
-		self.button_set:SetPos(775, 165)
+		self.button_set:SetPos(775 * scale, 165)
 		self.button_set:SetSize(100, 40)
 		self.button_set:SetText( "Set" )
 		self.button_set:SetTooltip( "Execute the selected function" )
@@ -2694,7 +2696,9 @@ local ROTATION_FUNCTIONS_TAB = {}
 function ROTATION_FUNCTIONS_TAB:Init()
 	self:CopyBounds( self:GetParent() )
 
-	local width = 148.3
+	-- Layout was hand-tuned for a 900-wide frame; scale it to whatever width the frame actually is
+	local scale = self:GetWide() / 900
+	local width = 148.3 * scale
 	local string_table = {"Line 1", "Line 2", "Plane 1", "Plane 2"}
 	local string_table2 = {PrecisionAlign.CONSTRUCT_LINE, PrecisionAlign.CONSTRUCT_LINE, PrecisionAlign.CONSTRUCT_PLANE, PrecisionAlign.CONSTRUCT_PLANE}
 	local selection_lists = {}
@@ -2770,7 +2774,7 @@ function ROTATION_FUNCTIONS_TAB:Init()
 
 
 	self.button_set = vgui.Create( "PA_Move_Button", self )
-		self.button_set:SetPos(775, 165)
+		self.button_set:SetPos(775 * scale, 165)
 		self.button_set:SetSize(100, 40)
 		self.button_set:SetText( "Rotate Entity" )
 		self.button_set:SetTooltip( "Execute the selected function" )
@@ -2853,7 +2857,7 @@ function ROTATION_FUNCTIONS_TAB:Init()
 	AddMenuText( "Functions", width * 2 + 10, self:GetTall() / 2 - 10, self )
 
 	self.button_angle_2lines = vgui.Create( "PA_Function_Button_Rotation", self )
-		self.button_angle_2lines:SetPos(323, 250)
+		self.button_angle_2lines:SetPos(323 * scale, 250)
 		self.button_angle_2lines:SetText( "Angle Between 2 Lines" )
 		self.button_angle_2lines.description = "Rotates the selected entity according to the angle between two lines\n\n" ..
 											   "This is the angle line 1 must be rotated by until it lies in the same direction as line 2\n\n" ..
@@ -2865,7 +2869,7 @@ function ROTATION_FUNCTIONS_TAB:Init()
 		end
 
 	self.button_angle_2planes = vgui.Create( "PA_Function_Button_Rotation", self )
-		self.button_angle_2planes:SetPos(323, 280)
+		self.button_angle_2planes:SetPos(323 * scale, 280)
 		self.button_angle_2planes:SetText( "Angle Between 2 Plane Normals" )
 		self.button_angle_2planes.description = "Rotates the selected entity according to the angle between two plane normals\n\n" ..
 												"This is the angle plane 1 must be rotated by until it lies in the same direction as plane 2\n\n" ..
@@ -2877,7 +2881,7 @@ function ROTATION_FUNCTIONS_TAB:Init()
 		end
 
 	self.button_lineplane_normal = vgui.Create( "PA_Function_Button_Rotation", self )
-		self.button_lineplane_normal:SetPos(323, 310)
+		self.button_lineplane_normal:SetPos(323 * scale, 310)
 		self.button_lineplane_normal:SetText( "Angle from Line to Plane Normal" )
 		self.button_lineplane_normal.description = "Rotates the selected entity according to the angle between a line and a plane normal\n\n" ..
 												   "This is the angle line 1 must be rotated by until it lies in the same direction as the plane normal"
@@ -2888,7 +2892,7 @@ function ROTATION_FUNCTIONS_TAB:Init()
 		end
 
 	self.button_lineplane = vgui.Create( "PA_Function_Button_Rotation", self )
-		self.button_lineplane:SetPos(509, 250)
+		self.button_lineplane:SetPos(509 * scale, 250)
 		self.button_lineplane:SetText( "Angle from Line to Plane" )
 		self.button_lineplane.description = "Rotates the selected entity according to the angle between a line and a plane\n\n" ..
 											"This is the angle line 1 must be rotated by until it lies parallel to the plane"
@@ -2909,7 +2913,7 @@ function ROTATION_FUNCTIONS_TAB:Init()
 		-- self.button_2line_intersect:SetDisabled(true)
 
 	self.button_align_2lines = vgui.Create( "PA_Function_Button_Rotation", self )
-		self.button_align_2lines:SetPos(695, 250)
+		self.button_align_2lines:SetPos(695 * scale, 250)
 		self.button_align_2lines:SetText( "Align 2 Lines" )
 		self.button_align_2lines.description = "Moves and rotates the selected entity according to the difference in direction and position of the two selected lines, so that line 1 will end up parallel to line 2\n\n" ..
 											   "This is identical to the 'Angle Between 2 Lines' rotation function, except that it will also move the entity along the vector from line 1's start point to line 2's start point."
@@ -2929,7 +2933,7 @@ function ROTATION_FUNCTIONS_TAB:Init()
 		end
 
 	self.button_mirror = vgui.Create( "PA_Function_Button_Rotation", self )
-		self.button_mirror:SetPos(695, 280)
+		self.button_mirror:SetPos(695 * scale, 280)
 		self.button_mirror:SetText( "Mirror Across Plane" )
 		self.button_mirror.description = "This will move and rotate the selected entity so that it will be mirrored about the selected plane, rotating about the prop's centre of mass\n\n" ..
 										 "Note that some props have different planes of symmetry - this can usually be remedied by rotating the prop in some direction by 90 or 180 degrees relative to itself about its centre of mass"
@@ -2941,11 +2945,13 @@ function ROTATION_FUNCTIONS_TAB:Init()
 end
 
 function ROTATION_FUNCTIONS_TAB:Paint()
+	local scale = self:GetWide() / 900
+
 	draw.RoundedBox(6, 0, 0, self:GetWide(), self:GetTall(), BGColor_Rotation)
-	draw.RoundedBox(6, 598, 15, 287, self:GetTall() / 2 - 20, BGColor)
-	draw.RoundedBox(6, 5, self:GetTall() / 2 + 15, 140, self:GetTall() / 2 - 20, BGColor)
-	draw.RoundedBox(6, 153, self:GetTall() / 2 + 15, 140, self:GetTall() / 2 - 20, BGColor)
-	draw.RoundedBox(6, 301, self:GetTall() / 2 + 15, 584, self:GetTall() / 2 - 20, BGColor)
+	draw.RoundedBox(6, 598 * scale, 15, 287 * scale, self:GetTall() / 2 - 20, BGColor)
+	draw.RoundedBox(6, 5 * scale, self:GetTall() / 2 + 15, 140 * scale, self:GetTall() / 2 - 20, BGColor)
+	draw.RoundedBox(6, 153 * scale, self:GetTall() / 2 + 15, 140 * scale, self:GetTall() / 2 - 20, BGColor)
+	draw.RoundedBox(6, 301 * scale, self:GetTall() / 2 + 15, 584 * scale, self:GetTall() / 2 - 20, BGColor)
 end
 
 function ROTATION_FUNCTIONS_TAB:UpdateDescription()
