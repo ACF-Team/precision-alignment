@@ -1,19 +1,10 @@
--- Serverside handler for the Primitives tab: spawns a primitive_shape cube (3 points) or primitive_convex_hull (4-10 points) from the "primitive" addon at the client's selected PA points.
+-- Serverside handler for the Primitives tab: spawns a primitive_shape or primitive_convex_hull entity from the client's selected PA points and shape choice.
 
 local PA_ = PrecisionAlign.PA_
 
 util.AddNetworkString( PA_ .. "primitive" )
 
-local MIN_POINTS = 3
-local MAX_POINTS = 10
-local CUBE_POINTS = 3
-
 local nextSpawn = {}
-
--- Heron's formula: triangle area from its 3 side lengths.
-local function herons( a, b, c )
-	return 0.25 * math.sqrt( 4 * a ^ 2 * b ^ 2 - ( a ^ 2 + b ^ 2 - c ^ 2 ) ^ 2 )
-end
 
 -- Rotates `ang` so that `from` (a local axis on the not-yet-rotated entity) points along `to` (world-space).
 local function alignAxis( ang, from, to )
@@ -28,86 +19,142 @@ local function alignAxis( ang, from, to )
 	return ang
 end
 
-local function spawnCube( ply, points )
-	if not scripted_ents.GetStored( "primitive_shape" ) then
-		Warning( "Precision Alignment: primitive_shape entity is not registered, is the \"primitive\" addon installed?\n" )
-		return
-	end
-
-	if scripted_ents.GetMember( "primitive_shape", "AdminOnly" ) and not ply:IsAdmin() then return end
-	if not gamemode.Call( "PlayerSpawnProp", ply, "models/combine_helicopter/helicopter_bomb01.mdl" ) then return end
-	if not ply:CheckLimit( "props" ) then return end
-
+-- Derives a flat box's placement from PA points: edge 1-2 and point 3's plane set the axes, extra points extend the footprint, thickness is fixed.
+local function ComputePlatePlacement( points, extendToAllPoints )
 	local P1, P2, P3 = points[1], points[2], points[3]
 
 	local D1 = ( P2 - P1 ):GetNormalized()
 	local D2 = ( P3 - P1 ):GetNormalized()
 	local normal = D1:Cross( D2 )
-	if normal:LengthSqr() < 1e-12 then return end -- points are collinear, no plane to build a cube on
+	if normal:LengthSqr() < 1e-12 then return end -- points are collinear, no plane to build on
+
 	normal:Normalize()
-
-	local S1 = P1:Distance( P2 )
-	local S2 = P2:Distance( P3 )
-	local S3 = P3:Distance( P1 )
-	local area = herons( S1, S2, S3 )
-
-	local length = S1
-	local width = length > 0 and ( 2 * area / length ) or 0
-
-	local edge = P2 - P1
-	local S4 = edge:Length() > 0 and ( ( P3 - P1 ):Dot( edge ) / edge:Length() ) or 0
-	length = math.max( length, S4 )
-
-	local minSize = Primitive and Primitive.minSize or 1
-	length = math.max( length, minSize )
-	width = math.max( width, minSize )
-
-	local thickness = PrecisionAlign.PRIMITIVE_CUBE_THICKNESS
 
 	-- In-plane direction perpendicular to D1, pointing toward P3's side.
 	local widthDir = normal:Cross( D1 )
 	widthDir:Normalize()
 	if widthDir:Dot( D2 ) < 0 then widthDir = -widthDir end
 
-	-- Box is symmetric about its center, so compute the center directly instead of via a local corner.
-	-- Extrude entirely to the +normal side, so the P1/P2/P3 winding order picks which face the points define.
-	local center = P1 + D1 * ( length * 0.5 ) + widthDir * ( width * 0.5 ) + normal * ( thickness * 0.5 )
+	-- Project every point onto the two in-plane axes and track the bounds along each.
+	local uMin, uMax, vMin, vMax = 0, 0, 0, 0
+	local count = extendToAllPoints and #points or 3
 
-	local ent = ents.Create( "primitive_shape" )
-	if not IsValid( ent ) then return end
+	for i = 1, count do
+		local offset = points[i] - P1
+		local u = offset:Dot( D1 )
+		local v = offset:Dot( widthDir )
 
-	ent:SetPos( center )
-	ent:SetAngles( Angle( 0, 0, 0 ) )
-	ent:Spawn()
-	ent:Activate()
-
-	if isfunction( ent.PrimitiveSetup ) then
-		ent:PrimitiveSetup( true, { "cube", true, 48 } )
+		if u < uMin then uMin = u elseif u > uMax then uMax = u end
+		if v < vMin then vMin = v elseif v > vMax then vMax = v end
 	end
 
-	ent:SetPrimSIZE( Vector( length, width, thickness ) )
+	local minSize = Primitive and Primitive.minSize or 1
+	local length = math.max( uMax - uMin, minSize )
+	local width = math.max( vMax - vMin, minSize )
+	local thickness = PrecisionAlign.PRIMITIVE_CUBE_THICKNESS
 
-	local ang = Angle( 0, 0, 0 )
-	ang = alignAxis( ang, ang:Up(), normal )
-	ang = alignAxis( ang, ang:Forward(), D1 )
-	ent:SetAngles( ang )
+	-- Center of the footprint on the P1/P2/P3 plane, extruded half the (fixed) thickness along +normal.
+	local center = P1 + D1 * ( ( uMin + uMax ) * 0.5 ) + widthDir * ( ( vMin + vMax ) * 0.5 ) + normal * ( thickness * 0.5 )
 
-	ent:SetVar( "Player", ply )
-	ply:AddCount( "props", ent )
-	ply:AddCleanup( "primitive", ent )
-
-	undo.Create( "primitive" )
-		undo.SetPlayer( ply )
-		undo.AddEntity( ent )
-		undo.SetCustomUndoText( "Undone primitive ( primitive_shape cube )" )
-	undo.Finish( "primitive ( primitive_shape cube )" )
-
-	DoPropSpawnedEffect( ent )
-
-	gamemode.Call( "PlayerSpawnedProp", ply, "models/combine_helicopter/helicopter_bomb01.mdl", ent )
+	return length, width, thickness, normal, D1, center
 end
 
-local function spawnConvexHull( ply, points, count )
+-- Like ComputePlatePlacement, but also derives thickness from the points' spread along the plane's normal.
+local function ComputeCubePlacement( points )
+	local P1, P2, P3 = points[1], points[2], points[3]
+
+	local D1 = ( P2 - P1 ):GetNormalized()
+	local D2 = ( P3 - P1 ):GetNormalized()
+	local normal = D1:Cross( D2 )
+	if normal:LengthSqr() < 1e-12 then return end -- points are collinear, no plane to build on
+
+	normal:Normalize()
+
+	local widthDir = normal:Cross( D1 )
+	widthDir:Normalize()
+	if widthDir:Dot( D2 ) < 0 then widthDir = -widthDir end
+
+	-- Track bounds on all 3 axes; wExtra sums points 4+ along `normal` to tell which side of the plane they're on.
+	local uMin, uMax, vMin, vMax, wMin, wMax = 0, 0, 0, 0, 0, 0
+	local wExtra = 0
+
+	for i = 1, #points do
+		local offset = points[i] - P1
+		local u = offset:Dot( D1 )
+		local v = offset:Dot( widthDir )
+		local w = offset:Dot( normal )
+
+		if u < uMin then uMin = u elseif u > uMax then uMax = u end
+		if v < vMin then vMin = v elseif v > vMax then vMax = v end
+		if w < wMin then wMin = w elseif w > wMax then wMax = w end
+
+		if i > 3 then wExtra = wExtra + w end
+	end
+
+	local minSize = Primitive and Primitive.minSize or 1
+	local length = math.max( uMax - uMin, minSize )
+	local width = math.max( vMax - vMin, minSize )
+	local thickness = math.max( wMax - wMin, minSize )
+
+	local center = P1 + D1 * ( ( uMin + uMax ) * 0.5 ) + widthDir * ( ( vMin + vMax ) * 0.5 ) + normal * ( ( wMin + wMax ) * 0.5 )
+
+	-- Flip so local +dz (base-to-peak) points towards the extra points, not wherever winding order put `normal`.
+	local alignNormal = wExtra < 0 and -normal or normal
+
+	return length, width, thickness, alignNormal, D1, center
+end
+
+-- Builds a Spawn( ply, points ) function for a box-inscribed primitive_shape type, given its placement function.
+local function spawnBoxShape( shapeType, computePlacement )
+	return function( ply, points )
+		if not scripted_ents.GetStored( "primitive_shape" ) then
+			Warning( "Precision Alignment: primitive_shape entity is not registered, is the \"primitive\" addon installed?\n" )
+			return
+		end
+
+		if scripted_ents.GetMember( "primitive_shape", "AdminOnly" ) and not ply:IsAdmin() then return end
+		if not gamemode.Call( "PlayerSpawnProp", ply, "models/combine_helicopter/helicopter_bomb01.mdl" ) then return end
+		if not ply:CheckLimit( "props" ) then return end
+
+		local length, width, thickness, normal, D1, center = computePlacement( points )
+		if not length then return end
+
+		local ent = ents.Create( "primitive_shape" )
+		if not IsValid( ent ) then return end
+
+		ent:SetPos( center )
+		ent:SetAngles( Angle( 0, 0, 0 ) )
+		ent:Spawn()
+		ent:Activate()
+
+		if isfunction( ent.PrimitiveSetup ) then
+			ent:PrimitiveSetup( true, { shapeType, true, 48 } )
+		end
+
+		ent:SetPrimSIZE( Vector( width, length, thickness ) )
+
+		local ang = Angle( 0, 0, 0 )
+		ang = alignAxis( ang, ang:Up(), normal )
+		ang = alignAxis( ang, ang:Right(), -D1 )
+		ent:SetAngles( ang )
+
+		ent:SetVar( "Player", ply )
+		ply:AddCount( "props", ent )
+		ply:AddCleanup( "primitive", ent )
+
+		undo.Create( "primitive" )
+			undo.SetPlayer( ply )
+			undo.AddEntity( ent )
+			undo.SetCustomUndoText( "Undone primitive ( primitive_shape " .. shapeType .. " )" )
+		undo.Finish( "primitive ( primitive_shape " .. shapeType .. " )" )
+
+		DoPropSpawnedEffect( ent )
+
+		gamemode.Call( "PlayerSpawnedProp", ply, "models/combine_helicopter/helicopter_bomb01.mdl", ent )
+	end
+end
+
+local function spawnConvexHull( ply, points )
 	if not scripted_ents.GetStored( "primitive_convex_hull" ) then
 		Warning( "Precision Alignment: primitive_convex_hull entity is not registered, is the \"primitive\" addon installed?\n" )
 		return
@@ -116,6 +163,8 @@ local function spawnConvexHull( ply, points, count )
 	if scripted_ents.GetMember( "primitive_convex_hull", "AdminOnly" ) and not ply:IsAdmin() then return end
 	if not gamemode.Call( "PlayerSpawnProp", ply, "models/combine_helicopter/helicopter_bomb01.mdl" ) then return end
 	if not ply:CheckLimit( "props" ) then return end
+
+	local count = #points
 
 	-- centroid becomes the entity's own position; vertices are stored relative to it
 	local centroid = Vector( 0, 0, 0 )
@@ -160,9 +209,31 @@ local function spawnConvexHull( ply, points, count )
 	gamemode.Call( "PlayerSpawnedProp", ply, "models/combine_helicopter/helicopter_bomb01.mdl", ent )
 end
 
+PrecisionAlign.PRIMITIVE_TYPES.plate.Spawn = spawnBoxShape( "cube", function( points ) return ComputePlatePlacement( points, true ) end )
+PrecisionAlign.PRIMITIVE_TYPES.cube.Spawn = spawnBoxShape( "cube", ComputeCubePlacement )
+PrecisionAlign.PRIMITIVE_TYPES.wedge.Spawn = spawnBoxShape( "wedge", ComputeCubePlacement )
+PrecisionAlign.PRIMITIVE_TYPES.pyramid.Spawn = spawnBoxShape( "pyramid", ComputeCubePlacement )
+PrecisionAlign.PRIMITIVE_TYPES.plane.Spawn = spawnBoxShape( "plane", ComputePlatePlacement )
+PrecisionAlign.PRIMITIVE_TYPES.cube_hole.Spawn = spawnBoxShape( "cube_hole", ComputeCubePlacement )
+PrecisionAlign.PRIMITIVE_TYPES.dome_hollow.Spawn = spawnBoxShape( "dome_hollow", ComputeCubePlacement )
+PrecisionAlign.PRIMITIVE_TYPES.cone.Spawn = spawnBoxShape( "cone", ComputeCubePlacement )
+PrecisionAlign.PRIMITIVE_TYPES.cube_magic.Spawn = spawnBoxShape( "cube_magic", ComputeCubePlacement )
+PrecisionAlign.PRIMITIVE_TYPES.cylinder.Spawn = spawnBoxShape( "cylinder", ComputeCubePlacement )
+PrecisionAlign.PRIMITIVE_TYPES.dome.Spawn = spawnBoxShape( "dome", ComputeCubePlacement )
+PrecisionAlign.PRIMITIVE_TYPES.parallelogram.Spawn = spawnBoxShape( "parallelogram", ComputeCubePlacement )
+PrecisionAlign.PRIMITIVE_TYPES.sphere.Spawn = spawnBoxShape( "sphere", ComputeCubePlacement )
+PrecisionAlign.PRIMITIVE_TYPES.torus.Spawn = spawnBoxShape( "torus", ComputeCubePlacement )
+PrecisionAlign.PRIMITIVE_TYPES.tube.Spawn = spawnBoxShape( "tube", ComputeCubePlacement )
+PrecisionAlign.PRIMITIVE_TYPES.wedge_corner.Spawn = spawnBoxShape( "wedge_corner", ComputeCubePlacement )
+PrecisionAlign.PRIMITIVE_TYPES.convex_hull.Spawn = spawnConvexHull
+
 net.Receive( PA_ .. "primitive", function( _, ply )
+	local id = net.ReadString()
 	local count = net.ReadUInt( 8 )
-	if count < MIN_POINTS or count > MAX_POINTS then return end
+
+	local entry = PrecisionAlign.PRIMITIVE_TYPES[id]
+	if not entry or not entry.Spawn then return end
+	if count < entry.minPoints or count > entry.maxPoints then return end
 
 	if ( nextSpawn[ply] or 0 ) > SysTime() then return end
 	nextSpawn[ply] = SysTime() + PrecisionAlign.PRIMITIVE_SPAWN_COOLDOWN
@@ -172,9 +243,5 @@ net.Receive( PA_ .. "primitive", function( _, ply )
 		points[i] = net.ReadVector()
 	end
 
-	if count == CUBE_POINTS then
-		spawnCube( ply, points )
-	else
-		spawnConvexHull( ply, points, count )
-	end
+	entry.Spawn( ply, points )
 end )

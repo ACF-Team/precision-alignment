@@ -3,6 +3,13 @@ function CONSTRUCT_LISTVIEW:Init()
 	self:SetSize(110, 169)
 end
 
+-- Like GetSelected(), but ordered by ascending point/line/plane ID.
+function CONSTRUCT_LISTVIEW:GetSelectedSorted()
+	local sorted = self:GetSelected()
+	table.sort( sorted, function( a, b ) return a:GetID() < b:GetID() end )
+	return sorted
+end
+
 function CONSTRUCT_LISTVIEW:Text( title, construct )
 	self.construct_type = construct
 	self:AddColumn( "" .. title)

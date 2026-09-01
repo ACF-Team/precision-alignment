@@ -1,4 +1,4 @@
--- Primitives Tab. Lets the user pick 3-10 PA points to spawn a primitive_shape cube (3) or primitive_convex_hull (4-10); warns instead if the "primitive" addon isn't loaded.
+-- Primitives Tab. Lets the user pick a registered primitive shape and points to spawn it; warns if the "primitive" addon isn't loaded.
 --********************************************************************************************************************
 
 if SERVER then return end
@@ -17,10 +17,6 @@ local function AddMenuText( text, x, y, parent )
 	return Text
 end
 
-local MIN_POINTS = 3
-local MAX_POINTS = 10
-local CUBE_POINTS = 3
-
 local PRIMITIVES_TAB = {}
 function PRIMITIVES_TAB:Init()
 	self:CopyBounds( self:GetParent() )
@@ -34,59 +30,95 @@ function PRIMITIVES_TAB:Init()
 
 	self.list_points = vgui.Create( "PA_Construct_ListView", self.colour_panel )
 		self.list_points:Text( "Points", PrecisionAlign.CONSTRUCT_POINT, self.colour_panel )
-		self.list_points:SetTooltip( "Select 3 points for a plate, or 4-10 points for a convex hull" )
+		self.list_points:SetTooltip( "Select the points required by the chosen primitive below" )
 		self.list_points:SetPos( 20, 30 )
 		self.list_points:SetMultiSelect( true )
 
-	AddMenuText( "Primitive: Cube / Convex Hull", 330, 9, self )
+	AddMenuText( "Primitive", 330, 9, self )
+
+	self.text_requires_addon = vgui.Create( "DLabel", self )
+		self.text_requires_addon:SetPos( 330, 30 )
+		self.text_requires_addon:SetSize( 400, 60 )
+		self.text_requires_addon:SetWrap( true )
+		self.text_requires_addon:SetContentAlignment( 7 )
+		self.text_requires_addon:SetText(
+			"Requires the \"primitive\" addon.\n\n" ..
+			PrecisionAlign.PRIMITIVE_GENERIC_DESCRIPTION
+		)
+		self.text_requires_addon:SetTextColor( self:GetSkin().Colours.Label.Dark )
+
+	self.combo_primitive = vgui.Create( "DComboBox", self )
+		self.combo_primitive:SetPos( 330, 94 )
+		self.combo_primitive:SetSize( 191, 22 )
+		self.combo_primitive:SetSortItems( false )
 
 	self.text_description = vgui.Create( "DLabel", self )
-		self.text_description:SetPos( 330, 36 )
-		self.text_description:SetSize( 400, 300 )
+		self.text_description:SetPos( 330, 126 )
+		self.text_description:SetSize( 400, 220 )
 		self.text_description:SetWrap( true )
 		self.text_description:SetContentAlignment( 7 )
 		self.text_description:SetTextColor( self:GetSkin().Colours.Label.Dark )
-		self.text_description:SetText(
-			"Select 3 points for a plate (1 unit thick cube):\n" ..
-			"An edge will be aligned from points 1 to 2, and will stretch to fit 3.\n\n" ..
-			"Select 4-10 points for a convex hull:\n" ..
-			"The order of the points do not matter.\n\n" ..
-			"Requires the \"primitive\" addon."
-		)
+
+	for _, id in ipairs( PrecisionAlign.PRIMITIVE_ORDER ) do
+		local data = PrecisionAlign.PRIMITIVE_TYPES[id]
+		self.combo_primitive:AddChoice( data.label, id )
+	end
+
+	self.combo_primitive.OnSelect = function( _, _, _, id )
+		local data = PrecisionAlign.PRIMITIVE_TYPES[id]
+		self.selected_primitive = data
+
+		local points_req = data.minPoints == data.maxPoints
+			and ( data.minPoints .. " point" .. ( data.minPoints ~= 1 and "s" or "" ) )
+			or ( data.minPoints .. "-" .. data.maxPoints .. " points" )
+
+		local text = "Requires " .. points_req .. "."
+		if data.description ~= "" then text = text .. "\n\n" .. data.description end
+
+		self.text_description:SetText( text )
+	end
+
+	self.combo_primitive:ChooseOptionID( 1 )
 
 	self.button_create = vgui.Create( "PA_Function_Button", self )
 		self.button_create:SetPos( 330, 378 )
 		self.button_create:SetSize( 191, 50 )
 		self.button_create:SetText( "Create Primitive" )
-		self.button_create:SetTooltip( "Spawn a cube (3 points) or convex hull (4-10 points) from the selected points" )
+		self.button_create:SetTooltip( "Spawn the selected primitive from the selected points" )
 		self.button_create:SetFunction( function()
-			local selected = self.list_points:GetSelected()
+			local data = self.selected_primitive
+			if not data then
+				PrecisionAlign.Warning( "Select a primitive" )
+				return false
+			end
+
+			local selected = self.list_points:GetSelectedSorted()
 
 			local points = {}
-			for _, v in pairs( selected ) do
+			for _, v in ipairs( selected ) do
 				local ID = v:GetID()
 				if PrecisionAlign.Functions.construct_exists( PrecisionAlign.CONSTRUCT_POINT, ID ) then
 					points[#points + 1] = PrecisionAlign.Functions.point_global( ID ).origin
 				end
 			end
 
-			if #points < MIN_POINTS then
-				PrecisionAlign.Warning( "Select at least " .. MIN_POINTS .. " defined points" )
+			if #points < data.minPoints then
+				PrecisionAlign.Warning( "Select at least " .. data.minPoints .. " defined points" )
 				return false
 			end
 
-			if #points > MAX_POINTS then
-				PrecisionAlign.Warning( "Select at most " .. MAX_POINTS .. " points" )
+			if #points > data.maxPoints then
+				PrecisionAlign.Warning( "Select at most " .. data.maxPoints .. " points" )
 				return false
 			end
 
-			local entity_class = #points == CUBE_POINTS and "primitive_shape" or "primitive_convex_hull"
-			if not scripted_ents.GetStored( entity_class ) then
+			if not scripted_ents.GetStored( data.entity ) then
 				PrecisionAlign.Warning( "The \"primitive\" addon is not installed" )
 				return false
 			end
 
 			net.Start( PA_ .. "primitive" )
+				net.WriteString( data.id )
 				net.WriteUInt( #points, 8 )
 				for i = 1, #points do
 					net.WriteVector( points[i] )
