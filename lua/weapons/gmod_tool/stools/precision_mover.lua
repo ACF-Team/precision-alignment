@@ -32,6 +32,40 @@ if SERVER then
     util.AddNetworkString(TOOL.Name .. "_LeftClick")
     util.AddNetworkString(TOOL.Name .. "_RightClick")
     util.AddNetworkString(TOOL.Name .. "_R")
+    util.AddNetworkString("PMover_TraceReq")
+    util.AddNetworkString("PMover_TraceRes")
+end
+
+if SERVER then
+    local PMOVER_TRACE_COOLDOWN = 0.1
+    local nextTraceReq = {}
+
+    net.Receive("PMover_TraceReq", function(_, ply)
+        local startpos = net.ReadVector()
+        local dir = net.ReadVector()
+        local ignore = net.ReadEntity()
+
+        if not IsValid(ply) then return end
+
+        local now = CurTime()
+        local id = ply:SteamID64() or ply:EntIndex()
+        if (nextTraceReq[id] or 0) > now then return end
+        nextTraceReq[id] = now + PMOVER_TRACE_COOLDOWN
+
+        local filter = {ply}
+        if IsValid(ignore) then filter[#filter + 1] = ignore end
+
+        local tr = util.TraceLine({
+            start = startpos,
+            endpos = startpos + dir:GetNormalized() * 50000,
+            filter = filter
+        })
+
+        net.Start("PMover_TraceRes")
+        net.WriteVector(tr.HitPos)
+        net.WriteBool(tr.Hit and not tr.StartSolid)
+        net.Send(ply)
+    end)
 end
 
 TOOL.enttbl = {}
@@ -117,6 +151,32 @@ function TOOL:IntersectRayWithPlane(planepoint, norm, line, linenormal)
     local vec = linepoint + x * linenormal
 
     return vec
+end
+
+function TOOL:RequestTraceSnap(startpos, dir)
+    if SERVER then return end
+
+    dir = dir:GetNormalized()
+    local now = CurTime()
+    local changed = not self.lastTraceReqDir or self.lastTraceReqDir:Dot(dir) < 0.999
+
+    if changed then
+        self.traceSnap = nil -- old surface no longer matches the new direction
+    end
+
+    if changed or (now - (self.lastTraceReqTime or 0)) > 0.2 then
+        self.lastTraceReqDir = dir
+        self.lastTraceReqTime = now
+
+        local ent = JG.stools.Data.precision_mover.Ent
+        local ignoreEnt = (not IsConstructProxy(ent)) and ent or NULL
+
+        net.Start("PMover_TraceReq")
+        net.WriteVector(startpos)
+        net.WriteVector(dir)
+        net.WriteEntity(IsValid(ignoreEnt) and ignoreEnt or NULL)
+        net.SendToServer()
+    end
 end
 
 local math = math
@@ -477,7 +537,22 @@ function TOOL:RightClick(trace)
             vec2 = vec:Dot(dir)
             local var3 = vec2 * len + self.dist
 
-            if owner:KeyDown(IN_SPEED) then
+            if owner:KeyDown(IN_SPEED) and JG.stools.Data.precision_mover.SnapMode == "trace" then
+                -- Trace snap: shoot along the direction the user is dragging and snap
+                -- the object onto the nearest surface (traced server-side for accuracy).
+                local moveDir = dir * (var3 >= 0 and -1 or 1)
+                self:RequestTraceSnap(self.lat.pos, moveDir)
+
+                if self.traceSnap and self.traceSnap.hit then
+                    local hitpos = self.traceSnap.pos
+                    JG.stools.Data.precision_mover.Ent:SetPos(hitpos)
+                    self.Leng = (hitpos - self.lat.pos):Dot(dir)
+                else
+                    -- No result yet; move freely until the server replies.
+                    JG.stools.Data.precision_mover.Ent:SetPos(self.lat.pos - dir * var3)
+                    self.Leng = -var3
+                end
+            elseif owner:KeyDown(IN_SPEED) then
                 local val = JG.stools.CP.precision_mover.DNumSlider[2]:GetValue()
                 local val2 = var3 < 0 and math.Round(var3 / val) * val or math.floor(var3 / val) * val
                 JG.stools.Data.precision_mover.Ent:SetPos(self.lat.pos - dir * val2)
@@ -752,6 +827,13 @@ function TOOL:Think()
             self:Reload(tr)
         end)
 
+        net.Receive("PMover_TraceRes", function()
+            self.traceSnap = {
+                pos = net.ReadVector(),
+                hit = net.ReadBool()
+            }
+        end)
+
         concommand.Add("mover_reloadui", function()
             self.first = false
             JG.stools.loadedP.precision_mover = false
@@ -779,7 +861,8 @@ function TOOL:Think()
                 WL = false,
                 Lat = NULL,
                 la = false,
-                Copy = false
+                Copy = false,
+                SnapMode = "increment"
             }
 
             for _, v in pairs(self.panel:GetChildren()) do
@@ -810,6 +893,20 @@ function TOOL:Think()
                 else
                     JG.stools.Data.precision_mover.WL = true
                 end
+            end
+
+            -- Snap mode: Increment (round to slider steps) or Trace (snap to the
+            -- nearest surface along the drag direction, traced server-side).
+            t[2] = vgui.Create("DComboBox", self.panel)
+            t[2]:SetPos(110, baseY)
+            t[2]:SetSize(140, 25)
+            t[2]:SetValue("Snap: Increment")
+            t[2]:AddChoice("Snap: Increment")
+            t[2]:AddChoice("Snap: Trace")
+            t[2]:SetTooltip("Snapping behaviour while holding SPRINT:\nIncrement - round to the snap sliders.\nTrace - snap to the nearest surface along the drag.")
+
+            t[2].OnSelect = function(_, index)
+                JG.stools.Data.precision_mover.SnapMode = index == 2 and "trace" or "increment"
             end
 
             JG.stools.CP.precision_mover.DCheckBox = {}
