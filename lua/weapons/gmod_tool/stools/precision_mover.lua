@@ -133,7 +133,10 @@ TOOL.lat = {
     ang = Angle(),
     laang = Angle(),
     angdir = Vector(),
-    val1 = Vector()
+    val1 = Vector(),
+    coordGrab = false,
+    coordT0 = 0,
+    grabpos = Vector()
 }
 
 TOOL.Time = CurTime()
@@ -147,6 +150,29 @@ function TOOL:IntersectRayWithPlane(planepoint, norm, line, linenormal)
     local vec = linepoint + x * linenormal
 
     return vec
+end
+
+function TOOL:GetDragAxis(index)
+    local ent = PrecisionAlign.Mover.Data.Ent
+
+    if PrecisionAlign.Mover.Data.WL == false then
+        if index == 1 then return ent:GetForward() end
+        if index == 2 then return ent:GetRight() end
+        return ent:GetUp()
+    end
+
+    if index == 1 then return Vector(1, 0, 0) end
+    if index == 2 then return Vector(0, -1, 0) end
+    return Vector(0, 0, 1)
+end
+
+function TOOL:ClosestAxisT(P0, D, O, V)
+    local b = D:Dot(V)
+    local denom = 1 - b * b
+    if math.abs(denom) < 1e-4 then return nil end
+
+    local w0 = P0 - O
+    return (b * V:Dot(w0) - D:Dot(w0)) / denom
 end
 
 function TOOL:RequestTraceSnap(startpos, dir)
@@ -449,6 +475,7 @@ function TOOL:RightClick(trace)
 
         if self.lat.act == false then
             self.lat.act = true
+            self.lat.coordGrab = false -- recapture the axis grab offset for this drag
             self.lat.pos = PrecisionAlign.Mover.Data.BasePos == NULL and PrecisionAlign.Mover.Data.Ent:GetPos() or PrecisionAlign.Mover.Data.BasePos
             self.lat.pos1 = PrecisionAlign.Mover.Data.Ent:GetPos()
             self.lat.mainpos = PrecisionAlign.Mover.Data.Ent:GetPos()
@@ -492,71 +519,41 @@ function TOOL:RightClick(trace)
         end
         local Lalt = input.IsKeyDown(KEY_LALT)
         if self.coordS > 0 then
-            local vec = trace.HitPos - self.lat.pos
-            local vec2
-            local len
-            local dir
+            local dir = self:GetDragAxis(self.coordS)
+            local t = self:ClosestAxisT(self.lat.pos, dir, owner:EyePos(), owner:EyeAngles():Forward())
 
-            if PrecisionAlign.Mover.Data.WL == false then
-                if self.coordS == 1 then
-                    dir = PrecisionAlign.Mover.Data.Ent:GetForward()
-                    vec = self:IntersectRayWithPlane(self.lat.pos + dir * self.dist, PrecisionAlign.Mover.Data.Ent:GetUp(), owner:EyePos(), owner:EyeAngles():Forward())
-                elseif self.coordS == 2 then
-                    dir = PrecisionAlign.Mover.Data.Ent:GetRight()
-                    vec = self:IntersectRayWithPlane(self.lat.pos + dir * self.dist, PrecisionAlign.Mover.Data.Ent:GetUp(), owner:EyePos(), owner:EyeAngles():Forward())
-                elseif self.coordS == 3 then
-                    dir = PrecisionAlign.Mover.Data.Ent:GetUp()
-                    local val1 = (self.lat.pos - owner:EyePos()):Angle()
-                    val1.p = 0
-                    val1 = val1:Forward()
-                    vec = self:IntersectRayWithPlane(self.lat.pos + dir * self.dist, val1, owner:EyePos(), owner:EyeAngles():Forward())
+            if t then
+                if self.lat.coordGrab == false then
+                    self.lat.coordGrab = true
+                    self.lat.coordT0 = t
+                    self.lat.grabpos = PrecisionAlign.Mover.Data.Ent:GetPos()
                 end
-            else
-                if self.coordS == 1 then
-                    dir = World.x
-                    vec = self:IntersectRayWithPlane(self.lat.pos + dir * self.dist, World.z, owner:EyePos(), owner:EyeAngles():Forward())
-                elseif self.coordS == 2 then
-                    dir = World.y
-                    vec = self:IntersectRayWithPlane(self.lat.pos + dir * self.dist, World.z, owner:EyePos(), owner:EyeAngles():Forward())
-                elseif self.coordS == 3 then
-                    dir = World.z
-                    local val1 = (self.lat.pos - owner:EyePos()):Angle()
-                    val1.p = 0
-                    val1 = val1:Forward()
-                    vec = self:IntersectRayWithPlane(self.lat.pos + dir * self.dist, val1, owner:EyePos(), owner:EyeAngles():Forward())
-                end
-            end
 
-            len = self.lat.pos - vec
-            vec = len:GetNormalized()
-            len = len:Length()
-            vec2 = vec:Dot(dir)
-            local var3 = vec2 * len + self.dist
+                local delta = t - self.lat.coordT0
 
-            if owner:KeyDown(IN_SPEED) and PrecisionAlign.Mover.Data.SnapMode == "trace" then
-                -- Trace snap: shoot along the direction the user is dragging and snap
-                -- the object onto the nearest surface (traced server-side for accuracy).
-                local moveDir = dir * (var3 >= 0 and -1 or 1)
-                self:RequestTraceSnap(self.lat.pos, moveDir)
+                if owner:KeyDown(IN_SPEED) and PrecisionAlign.Mover.Data.SnapMode == "trace" then
+                    -- Trace snap: shoot along the drag direction and snap the object
+                    -- onto the nearest surface (traced server-side for accuracy).
+                    local moveDir = dir * (delta >= 0 and 1 or -1)
+                    self:RequestTraceSnap(self.lat.grabpos, moveDir)
 
-                if self.traceSnap and self.traceSnap.hit then
-                    local hitpos = self.traceSnap.pos
-                    PrecisionAlign.Mover.Data.Ent:SetPos(hitpos)
-                    self.Leng = (hitpos - self.lat.pos):Dot(dir)
+                    if self.traceSnap and self.traceSnap.hit then
+                        PrecisionAlign.Mover.Data.Ent:SetPos(self.traceSnap.pos)
+                        self.Leng = (self.traceSnap.pos - self.lat.grabpos):Dot(dir)
+                    else
+                        -- No result yet; move freely until the server replies.
+                        PrecisionAlign.Mover.Data.Ent:SetPos(self.lat.grabpos + dir * delta)
+                        self.Leng = delta
+                    end
+                elseif owner:KeyDown(IN_SPEED) then
+                    local val = PrecisionAlign.Mover.CP.DNumSlider[2]:GetValue()
+                    local snapped = math.Round(delta / val) * val
+                    PrecisionAlign.Mover.Data.Ent:SetPos(self.lat.grabpos + dir * snapped)
+                    self.Leng = snapped
                 else
-                    -- No result yet; move freely until the server replies.
-                    PrecisionAlign.Mover.Data.Ent:SetPos(self.lat.pos - dir * var3)
-                    self.Leng = -var3
+                    PrecisionAlign.Mover.Data.Ent:SetPos(self.lat.grabpos + dir * delta)
+                    self.Leng = delta
                 end
-            elseif owner:KeyDown(IN_SPEED) then
-                local val = PrecisionAlign.Mover.CP.DNumSlider[2]:GetValue()
-                local val2 = var3 < 0 and math.Round(var3 / val) * val or math.floor(var3 / val) * val
-                PrecisionAlign.Mover.Data.Ent:SetPos(self.lat.pos - dir * val2)
-                local val3 = self.coordS
-                self.Leng = val3 == 2 and val2 or -val2
-            else
-                PrecisionAlign.Mover.Data.Ent:SetPos(self.lat.pos - dir * var3)
-                self.Leng = -var3
             end
         elseif self.AngS > 0 then
             local amount, dir
@@ -1503,8 +1500,13 @@ function TOOL:Hud1()
 
             local entry = {9999, 9999}
 
+            -- Hit-test most of the drawn axis line, not just the dot, so the whole
+            -- axis is grabbable. The segment starts a little out from the centre so
+            -- the three axes don't fight over the crosshair at the shared origin.
             for i = 1, 3 do
-                local tmp = Vec2L(mouse, dot[i])
+                local sx = Vec2_2.x + (Vec2[i].x - Vec2_2.x) * 0.2
+                local sy = Vec2_2.y + (Vec2[i].y - Vec2_2.y) * 0.2
+                local tmp = screenDistToSegment(mouse.x, mouse.y, sx, sy, Vec2[i].x, Vec2[i].y)
 
                 if tmp < 13 and entry[1] > tmp then
                     entry[1] = tmp
