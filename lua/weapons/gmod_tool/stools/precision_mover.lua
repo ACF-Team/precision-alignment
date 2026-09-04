@@ -50,6 +50,9 @@ TOOL.BasePos = NULL
 
 local isSingleplayer = game.SinglePlayer()
 
+-- Forward declarations; defined further down alongside the PA construct helpers.
+local IsConstructProxy, PickConstruct
+
 function TOOL:LeftClick(trace)
     local owner = self:GetOwner()
 
@@ -71,13 +74,22 @@ function TOOL:LeftClick(trace)
             JG.stools.Data.precision_mover.BasePos = PA_funcs.point_global(PA_selected_point).origin
         end
     else
-        JG.stools.Data.precision_mover.Ent = trace.Entity:IsValid() and not trace.Entity:IsNPC() and not trace.Entity:IsPlayer() and not trace.Entity:IsWorld() and trace.Entity or NULL
+        -- Constructs take priority over props, but only within a tight radius.
+        local construct = PickConstruct()
 
-        if JG.stools.Data.precision_mover.Ent ~= NULL then
-            JG.stools.CP.precision_mover.DAdjustableModelPanel[1]:SetModel(JG.stools.Data.precision_mover.Ent:GetModel())
-            JG.stools.CP.precision_mover.DLabel[1]:SetText(JG.stools.Data.precision_mover.Ent:GetModel())
+        if construct then
+            JG.stools.Data.precision_mover.Ent = construct
+            JG.stools.CP.precision_mover.DLabel[1]:SetText(construct:GetLabel())
             JG.stools.CP.precision_mover.DLabel[1]:SizeToContents()
-            JG.stools.Data.precision_mover.Ent:SetRenderMode(1)
+        else
+            JG.stools.Data.precision_mover.Ent = trace.Entity:IsValid() and not trace.Entity:IsNPC() and not trace.Entity:IsPlayer() and not trace.Entity:IsWorld() and trace.Entity or NULL
+
+            if JG.stools.Data.precision_mover.Ent ~= NULL then
+                JG.stools.CP.precision_mover.DAdjustableModelPanel[1]:SetModel(JG.stools.Data.precision_mover.Ent:GetModel())
+                JG.stools.CP.precision_mover.DLabel[1]:SetText(JG.stools.Data.precision_mover.Ent:GetModel())
+                JG.stools.CP.precision_mover.DLabel[1]:SizeToContents()
+                JG.stools.Data.precision_mover.Ent:SetRenderMode(1)
+            end
         end
     end
 
@@ -108,6 +120,254 @@ function TOOL:IntersectRayWithPlane(planepoint, norm, line, linenormal)
 end
 
 local math = math
+
+local lineThicknessCvar = CLIENT and GetConVar("precision_align_line_thickness") or nil
+local _meshV1, _meshV2 = Vector(), Vector()
+local function thickLine(startX, startY, endX, endY, thickness, color, cap)
+    if not startX or not startY or not endX or not endY then return end
+
+    thickness = math.max(1, thickness or 1)
+    color = color or color_white
+
+    if thickness <= 1 then -- Thickness of 1 looks better without the mesh method.
+        surface.SetDrawColor(color.r, color.g, color.b, color.a)
+        surface.DrawLine(startX, startY, endX, endY)
+        return
+    end
+
+    local x, y   = endX - startX, endY - startY
+    local cx, cy = (startX + endX) / 2, (startY + endY) / 2
+    local dist   = (math.sqrt((x ^ 2) + (y ^ 2))) + (cap == false and 0 or thickness * 1.5)
+
+    local a      = -math.atan2(y, x)
+    local s, c   = math.sin(a), math.cos(a)
+
+    _meshV1:SetUnpacked(cx, cy, 0)
+    _meshV2:SetUnpacked(s, c, -thickness)
+    render.SetColorMaterial()
+    mesh.Begin(MATERIAL_QUADS, 1)
+    xpcall(function()
+        mesh.QuadEasy(_meshV1, _meshV2, dist, thickness, color)
+        mesh.End()
+    end, function(err) mesh.End() print(debug.traceback(err)) end)
+end
+
+local _moverCol = color_white
+local function moverSetColor(col)
+    _moverCol = col
+    surface.SetDrawColor(col)
+end
+local function moverLine(x1, y1, x2, y2)
+    local thickness = lineThicknessCvar and lineThicknessCvar:GetFloat() or 4
+    thickLine(x1, y1, x2, y2, thickness, _moverCol, true)
+end
+-- Circle outline built from thick line segments so it matches the gizmo lines.
+local function moverCircle(cx, cy, radius, color)
+    local thickness = lineThicknessCvar and lineThicknessCvar:GetFloat() or 4
+    local segments = math.max(12, math.floor(radius))
+    local px, py = cx + radius, cy
+    for i = 1, segments do
+        local a = (i / segments) * math.pi * 2
+        local nx, ny = cx + math.cos(a) * radius, cy + math.sin(a) * radius
+        thickLine(px, py, nx, ny, thickness, color, false)
+        px, py = nx, ny
+    end
+end
+
+--------------------------------------------------------------------------------
+-- Precision Alignment construct support
+--
+-- Lets the mover grab PA points/lines/planes as though they were props. A
+-- construct is wrapped in a proxy that exposes the same subset of the entity API
+-- the mover already drives, so all the existing movement/rotation math is reused:
+--   * Points    - translate only (no orientation).
+--   * Lines     - rotation swings the line's direction about its start point.
+--   * Planes    - rotation swings the plane's normal.
+-- Constructs are purely clientside data, so moves apply live and never network.
+--------------------------------------------------------------------------------
+local ConstructProxy = {}
+ConstructProxy.__index = ConstructProxy
+
+function IsConstructProxy(o)
+    return type(o) == "table" and getmetatable(o) == ConstructProxy
+end
+
+-- Direct (message-free) writes to the PA tables, mirroring the attachment logic
+-- of set_point/set_line/set_plane without spamming chat every frame of a drag.
+local function writePointWorld(id, origin)
+    local ent = PrecisionAlign.Points[id].entity
+    if IsValid(ent) then origin = ent:WorldToLocal(origin) end
+    PrecisionAlign.Points[id].origin = origin
+end
+
+local function writeLineWorld(id, startpoint, endpoint)
+    local ent = PrecisionAlign.Lines[id].entity
+    if IsValid(ent) then
+        startpoint = ent:WorldToLocal(startpoint)
+        endpoint = ent:WorldToLocal(endpoint)
+    end
+    PrecisionAlign.Lines[id].startpoint = startpoint
+    PrecisionAlign.Lines[id].endpoint = endpoint
+end
+
+local function writePlaneWorld(id, origin, normal)
+    local ent = PrecisionAlign.Planes[id].entity
+    if IsValid(ent) then
+        origin = ent:WorldToLocal(origin)
+        normal = (ent:WorldToLocal(ent:GetPos() + normal)):GetNormal()
+    end
+    PrecisionAlign.Planes[id].origin = origin
+    PrecisionAlign.Planes[id].normal = normal
+end
+
+function ConstructProxy:_read()
+    if self.ctype == PrecisionAlign.CONSTRUCT_POINT then
+        return PA_funcs.point_global(self.id)
+    elseif self.ctype == PrecisionAlign.CONSTRUCT_LINE then
+        return PA_funcs.line_global(self.id)
+    else
+        return PA_funcs.plane_global(self.id)
+    end
+end
+
+function ConstructProxy:IsValid()
+    return PA_funcs ~= nil and PA_funcs.construct_exists(self.ctype, self.id) == true
+end
+
+function ConstructProxy:GetPos()
+    local d = self:_read()
+    if not d then return Vector() end
+    if self.ctype == PrecisionAlign.CONSTRUCT_LINE then return d.startpoint end
+    return d.origin
+end
+
+function ConstructProxy:GetAngles()
+    local d = self:_read()
+    if not d then return Angle() end
+    if self.ctype == PrecisionAlign.CONSTRUCT_LINE then
+        return (d.endpoint - d.startpoint):Angle()
+    elseif self.ctype == PrecisionAlign.CONSTRUCT_PLANE then
+        return d.normal:Angle()
+    end
+
+    -- Points have no orientation of their own, but if attached to an entity we
+    -- borrow its angles so "Local" mode translates along the entity's axes.
+    local ent = PrecisionAlign.Points[self.id].entity
+    if IsValid(ent) then return ent:GetAngles() end
+    return Angle()
+end
+
+function ConstructProxy:SetPos(pos)
+    local d = self:_read()
+    if not d then return end
+
+    if self.ctype == PrecisionAlign.CONSTRUCT_POINT then
+        writePointWorld(self.id, pos)
+    elseif self.ctype == PrecisionAlign.CONSTRUCT_LINE then
+        local delta = pos - d.startpoint
+        writeLineWorld(self.id, d.startpoint + delta, d.endpoint + delta)
+    else
+        writePlaneWorld(self.id, pos, d.normal)
+    end
+end
+
+function ConstructProxy:SetAngles(ang)
+    local d = self:_read()
+    if not d then return end
+
+    if self.ctype == PrecisionAlign.CONSTRUCT_LINE then
+        local len = d.startpoint:Distance(d.endpoint)
+        writeLineWorld(self.id, d.startpoint, d.startpoint + ang:Forward() * len)
+    elseif self.ctype == PrecisionAlign.CONSTRUCT_PLANE then
+        writePlaneWorld(self.id, d.origin, ang:Forward())
+    end
+    -- Points carry no orientation, so rotation is a no-op.
+end
+
+function ConstructProxy:GetForward() return self:GetAngles():Forward() end
+function ConstructProxy:GetRight() return self:GetAngles():Right() end
+function ConstructProxy:GetUp() return self:GetAngles():Up() end
+function ConstructProxy:WorldSpaceAABB() local p = self:GetPos() return p, p end
+function ConstructProxy:LocalToWorld(v) return self:GetPos() + v end
+function ConstructProxy:EntIndex() return -1 end
+function ConstructProxy:GetModel() return "" end
+function ConstructProxy:SetRenderMode() end
+function ConstructProxy:DrawModel() end
+function ConstructProxy:GetParent() return NULL end
+function ConstructProxy:IsNPC() return false end
+function ConstructProxy:IsPlayer() return false end
+function ConstructProxy:IsWorld() return false end
+
+function ConstructProxy:GetLabel()
+    if self.ctype == PrecisionAlign.CONSTRUCT_POINT then
+        return "PA Point [" .. self.id .. "]"
+    elseif self.ctype == PrecisionAlign.CONSTRUCT_LINE then
+        return "PA Line [" .. self.id .. "]"
+    end
+    return "PA Plane [" .. self.id .. "]"
+end
+
+-- 2D distance from point (px, py) to segment (ax, ay)-(bx, by).
+local function screenDistToSegment(px, py, ax, ay, bx, by)
+    local dx, dy = bx - ax, by - ay
+    local l2 = dx * dx + dy * dy
+    if l2 == 0 then return math.sqrt((px - ax) ^ 2 + (py - ay) ^ 2) end
+    local t = math.Clamp(((px - ax) * dx + (py - ay) * dy) / l2, 0, 1)
+    local cx, cy = ax + t * dx, ay + t * dy
+    return math.sqrt((px - cx) ^ 2 + (py - cy) ^ 2)
+end
+
+-- Tight screen-space radius (px) for grabbing a construct near the crosshair.
+local CONSTRUCT_PICK_RADIUS = 22
+
+-- Returns a ConstructProxy for the nearest construct under the crosshair, else nil.
+function PickConstruct()
+    if not PA_funcs or not PrecisionAlign then return nil end
+
+    local cx, cy = ScrW() / 2, ScrH() / 2
+    local best, bestType, bestId = CONSTRUCT_PICK_RADIUS, nil, nil
+
+    for id = 1, PrecisionAlign.MAX_CONSTRUCTS do
+        if PrecisionAlign.Points[id].visible then
+            local p = PA_funcs.point_global(id)
+            if p and p.origin then
+                local s = p.origin:ToScreen()
+                if s.visible then
+                    local d = math.sqrt((s.x - cx) ^ 2 + (s.y - cy) ^ 2)
+                    if d < best then best, bestType, bestId = d, PrecisionAlign.CONSTRUCT_POINT, id end
+                end
+            end
+        end
+
+        if PrecisionAlign.Lines[id].visible then
+            local l = PA_funcs.line_global(id)
+            if l and l.startpoint and l.endpoint then
+                local a, b = l.startpoint:ToScreen(), l.endpoint:ToScreen()
+                if a.visible or b.visible then
+                    local d = screenDistToSegment(cx, cy, a.x, a.y, b.x, b.y)
+                    if d < best then best, bestType, bestId = d, PrecisionAlign.CONSTRUCT_LINE, id end
+                end
+            end
+        end
+
+        if PrecisionAlign.Planes[id].visible then
+            local pl = PA_funcs.plane_global(id)
+            if pl and pl.origin then
+                local s = pl.origin:ToScreen()
+                if s.visible then
+                    local d = math.sqrt((s.x - cx) ^ 2 + (s.y - cy) ^ 2)
+                    if d < best then best, bestType, bestId = d, PrecisionAlign.CONSTRUCT_PLANE, id end
+                end
+            end
+        end
+    end
+
+    if bestType then
+        return setmetatable({ctype = bestType, id = bestId}, ConstructProxy)
+    end
+
+    return nil
+end
 
 function TOOL:RightClick(trace)
     if SERVER then
@@ -427,7 +687,10 @@ function TOOL:Think()
     end
 
     if self.la == true and self.Hold == false then
-        if (self.lat.lopos - self.lat.pos):Length() < 5000 then
+        if IsConstructProxy(JG.stools.Data.precision_mover.Ent) then
+            -- Constructs are clientside; the drag already applied the change live.
+            surface.PlaySound("buttons/button15.wav")
+        elseif (self.lat.lopos - self.lat.pos):Length() < 5000 then
             net.Start("Inf_Move")
             net.WriteInt(self.coordS, 3)
             net.WriteInt(self.AngS, 3)
@@ -692,6 +955,7 @@ function TOOL:Think()
             hook.Add("PostDrawTranslucentRenderables", "Mover_Render", function()
                 local ent = JG.stools.Data.precision_mover.Ent
                 if not IsValid(ent) then return end
+                if IsConstructProxy(ent) then return end -- constructs have no model to highlight
                 local wep = LocalPlayer():GetActiveWeapon()
 
                 if wep:IsValid() == false then
@@ -1039,88 +1303,88 @@ function TOOL:Hud1()
                 local tmp = i > 35 and 1 or i + 1
 
                 if self.AngS == 1 then
-                    surface.SetDrawColor(self.colList.x)
-                    surface.DrawLine(List.x[i].x, List.x[i].y, List.x[tmp].x, List.x[tmp].y)
+                    moverSetColor(self.colList.x)
+                    moverLine(List.x[i].x, List.x[i].y, List.x[tmp].x, List.x[tmp].y)
                 elseif self.AngS == 2 then
-                    surface.SetDrawColor(self.colList.y)
-                    surface.DrawLine(List.y[i].x, List.y[i].y, List.y[tmp].x, List.y[tmp].y)
+                    moverSetColor(self.colList.y)
+                    moverLine(List.y[i].x, List.y[i].y, List.y[tmp].x, List.y[tmp].y)
                 elseif self.AngS == 3 then
-                    surface.SetDrawColor(self.colList.z)
-                    surface.DrawLine(List.z[i].x, List.z[i].y, List.z[tmp].x, List.z[tmp].y)
+                    moverSetColor(self.colList.z)
+                    moverLine(List.z[i].x, List.z[i].y, List.z[tmp].x, List.z[tmp].y)
                 end
             end
         else
             for i = 1, 36 do
                 local tmp = i > 35 and 1 or i + 1
-                surface.SetDrawColor(self.colList.x)
-                surface.DrawLine(List.x[i].x, List.x[i].y, List.x[tmp].x, List.x[tmp].y)
-                surface.SetDrawColor(self.colList.y)
-                surface.DrawLine(List.y[i].x, List.y[i].y, List.y[tmp].x, List.y[tmp].y)
-                surface.SetDrawColor(self.colList.z)
-                surface.DrawLine(List.z[i].x, List.z[i].y, List.z[tmp].x, List.z[tmp].y)
+                moverSetColor(self.colList.x)
+                moverLine(List.x[i].x, List.x[i].y, List.x[tmp].x, List.x[tmp].y)
+                moverSetColor(self.colList.y)
+                moverLine(List.y[i].x, List.y[i].y, List.y[tmp].x, List.y[tmp].y)
+                moverSetColor(self.colList.z)
+                moverLine(List.z[i].x, List.z[i].y, List.z[tmp].x, List.z[tmp].y)
             end
         end
 
         if self.Hold then
-            surface.SetDrawColor(Color(255, 255, 0, 255))
+            moverSetColor(Color(255, 255, 0, 255))
 
             if JG.stools.Data.precision_mover.WL == false then
                 local val = self:ToScreen2(Vec1 + self.lat.angdir * dis * 2)
 
                 if self.UseSnap then
                     if self.AngS == 1 then
-                        surface.DrawLine(Vec2_2.x, Vec2_2.y, val.x, val.y)
+                        moverLine(Vec2_2.x, Vec2_2.y, val.x, val.y)
                         local val2 = (self:IntersectRayWithPlane(self.lat.pos, JG.stools.Data.precision_mover.Ent:GetForward(), owner:EyePos(), owner:EyeAngles():Forward()) - self.lat.pos)
                         val = self:ToScreen2(Vec1 + val2:GetNormalized() * 2 * dis)
-                        surface.SetDrawColor(Color(255, 0, 0, 255))
-                        surface.DrawLine(Vec2_2.x, Vec2_2.y, val.x, val.y)
+                        moverSetColor(Color(255, 0, 0, 255))
+                        moverLine(Vec2_2.x, Vec2_2.y, val.x, val.y)
                     elseif self.AngS == 2 then
-                        surface.DrawLine(Vec2_2.x, Vec2_2.y, val.x, val.y)
+                        moverLine(Vec2_2.x, Vec2_2.y, val.x, val.y)
                         val = self:ToScreen2(Vec1 + (self:IntersectRayWithPlane(self.lat.pos, JG.stools.Data.precision_mover.Ent:GetRight(), owner:EyePos(), owner:EyeAngles():Forward()) - self.lat.pos):GetNormalized() * 2 * dis)
-                        surface.SetDrawColor(Color(0, 255, 0, 255))
-                        surface.DrawLine(Vec2_2.x, Vec2_2.y, val.x, val.y)
+                        moverSetColor(Color(0, 255, 0, 255))
+                        moverLine(Vec2_2.x, Vec2_2.y, val.x, val.y)
                     elseif self.AngS == 3 then
-                        surface.DrawLine(Vec2_2.x, Vec2_2.y, val.x, val.y)
+                        moverLine(Vec2_2.x, Vec2_2.y, val.x, val.y)
                         val = self:ToScreen2(Vec1 + (self:IntersectRayWithPlane(self.lat.pos, JG.stools.Data.precision_mover.Ent:GetUp(), owner:EyePos(), owner:EyeAngles():Forward()) - self.lat.pos):GetNormalized() * 2 * dis)
-                        surface.SetDrawColor(Color(0, 0, 255, 255))
-                        surface.DrawLine(Vec2_2.x, Vec2_2.y, val.x, val.y)
+                        moverSetColor(Color(0, 0, 255, 255))
+                        moverLine(Vec2_2.x, Vec2_2.y, val.x, val.y)
                     end
                 else
                     if self.AngS == 1 then
-                        surface.DrawLine(Vec2_2.x, Vec2_2.y, val.x, val.y)
+                        moverLine(Vec2_2.x, Vec2_2.y, val.x, val.y)
                         val = self:ToScreen2(Vec1 + (self:IntersectRayWithPlane(self.lat.pos, JG.stools.Data.precision_mover.Ent:GetForward(), owner:EyePos(), owner:EyeAngles():Forward()) - self.lat.pos):GetNormalized() * 2 * dis)
-                        surface.SetDrawColor(Color(255, 0, 0, 255))
-                        surface.DrawLine(Vec2_2.x, Vec2_2.y, val.x, val.y)
+                        moverSetColor(Color(255, 0, 0, 255))
+                        moverLine(Vec2_2.x, Vec2_2.y, val.x, val.y)
                     elseif self.AngS == 2 then
-                        surface.DrawLine(Vec2_2.x, Vec2_2.y, val.x, val.y)
+                        moverLine(Vec2_2.x, Vec2_2.y, val.x, val.y)
                         val = self:ToScreen2(Vec1 + (self:IntersectRayWithPlane(self.lat.pos, JG.stools.Data.precision_mover.Ent:GetRight(), owner:EyePos(), owner:EyeAngles():Forward()) - self.lat.pos):GetNormalized() * 2 * dis)
-                        surface.SetDrawColor(Color(0, 255, 0, 255))
-                        surface.DrawLine(Vec2_2.x, Vec2_2.y, val.x, val.y)
+                        moverSetColor(Color(0, 255, 0, 255))
+                        moverLine(Vec2_2.x, Vec2_2.y, val.x, val.y)
                     elseif self.AngS == 3 then
-                        surface.DrawLine(Vec2_2.x, Vec2_2.y, val.x, val.y)
+                        moverLine(Vec2_2.x, Vec2_2.y, val.x, val.y)
                         val = self:ToScreen2(Vec1 + (self:IntersectRayWithPlane(self.lat.pos, JG.stools.Data.precision_mover.Ent:GetUp(), owner:EyePos(), owner:EyeAngles():Forward()) - self.lat.pos):GetNormalized() * 2 * dis)
-                        surface.SetDrawColor(Color(0, 0, 255, 255))
-                        surface.DrawLine(Vec2_2.x, Vec2_2.y, val.x, val.y)
+                        moverSetColor(Color(0, 0, 255, 255))
+                        moverLine(Vec2_2.x, Vec2_2.y, val.x, val.y)
                     end
                 end
             else
                 local val = self:ToScreen2(Vec1 + self.lat.angdir * dis * 2)
 
                 if self.AngS == 1 then
-                    surface.DrawLine(Vec2_2.x, Vec2_2.y, val.x, val.y)
+                    moverLine(Vec2_2.x, Vec2_2.y, val.x, val.y)
                     val = self:ToScreen2(Vec1 + (self:IntersectRayWithPlane(self.lat.pos, World.x, owner:EyePos(), owner:EyeAngles():Forward()) - self.lat.pos):GetNormalized() * 2 * dis)
-                    surface.SetDrawColor(Color(255, 0, 0, 255))
-                    surface.DrawLine(Vec2_2.x, Vec2_2.y, val.x, val.y)
+                    moverSetColor(Color(255, 0, 0, 255))
+                    moverLine(Vec2_2.x, Vec2_2.y, val.x, val.y)
                 elseif self.AngS == 2 then
-                    surface.DrawLine(Vec2_2.x, Vec2_2.y, val.x, val.y)
+                    moverLine(Vec2_2.x, Vec2_2.y, val.x, val.y)
                     val = self:ToScreen2(Vec1 + (self:IntersectRayWithPlane(self.lat.pos, World.y, owner:EyePos(), owner:EyeAngles():Forward()) - self.lat.pos):GetNormalized() * 2 * dis)
-                    surface.SetDrawColor(Color(0, 255, 0, 255))
-                    surface.DrawLine(Vec2_2.x, Vec2_2.y, val.x, val.y)
+                    moverSetColor(Color(0, 255, 0, 255))
+                    moverLine(Vec2_2.x, Vec2_2.y, val.x, val.y)
                 elseif self.AngS == 3 then
-                    surface.DrawLine(Vec2_2.x, Vec2_2.y, val.x, val.y)
+                    moverLine(Vec2_2.x, Vec2_2.y, val.x, val.y)
                     val = self:ToScreen2(Vec1 + (self:IntersectRayWithPlane(self.lat.pos, World.z, owner:EyePos(), owner:EyeAngles():Forward()) - self.lat.pos):GetNormalized() * 2 * dis)
-                    surface.SetDrawColor(Color(0, 0, 255, 255))
-                    surface.DrawLine(Vec2_2.x, Vec2_2.y, val.x, val.y)
+                    moverSetColor(Color(0, 0, 255, 255))
+                    moverLine(Vec2_2.x, Vec2_2.y, val.x, val.y)
                 end
             end
 
@@ -1211,102 +1475,102 @@ function TOOL:Hud1()
                     local TAC = TEXT_ALIGN_CENTER
 
                     if self.coordS == 1 then
-                        surface.SetDrawColor(col)
-                        surface.DrawLine(Vec2_2.x, Vec2_2.y, Vec2[1].x, Vec2[1].y)
+                        moverSetColor(col)
+                        moverLine(Vec2_2.x, Vec2_2.y, Vec2[1].x, Vec2[1].y)
                         draw.SimpleText("+Forward Roll : " .. string.format("%.1f", Ang.r) .. "º", font, Vec2[1].x, Vec2[1].y, Color(200, 0, 0, 255), TAC, TAC)
-                        surface.DrawCircle(dot[1].x, dot[1].y, 10, col)
+                        moverCircle(dot[1].x, dot[1].y, 10, col)
                         draw.SimpleText("Length ( inch , m , cm) : " .. string.format("%.2f", self.Leng) .. " , " .. string.format("%.2f", self.Leng * 0.0254) .. " , " .. string.format("%.2f", self.Leng * 2.54), font, Vec2[1].x, Vec2[1].y + 30, Color(2000, 0, 0, 255), TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER)
                         col = Color(0, 255, 255, 255)
                         local val1 = self:ToScreen2(self.lat.pos + JG.stools.Data.precision_mover.Ent:GetForward() * self.dist)
-                        surface.DrawCircle(val1.x, val1.y, 20, col)
+                        moverCircle(val1.x, val1.y, 20, col)
                     elseif self.coordS == 2 then
-                        surface.SetDrawColor(col)
-                        surface.DrawLine(Vec2_2.x, Vec2_2.y, Vec2[2].x, Vec2[2].y)
+                        moverSetColor(col)
+                        moverLine(Vec2_2.x, Vec2_2.y, Vec2[2].x, Vec2[2].y)
                         draw.SimpleText("+Right Pitch : " .. string.format("%.1f", Ang.p) .. "º", font, Vec2[2].x, Vec2[2].y, Color(0, 200, 0, 255), TAC, TAC)
-                        surface.DrawCircle(dot[2].x, dot[2].y, 10, col)
+                        moverCircle(dot[2].x, dot[2].y, 10, col)
                         draw.SimpleText("Length ( inch , m , cm) : " .. string.format("%.2f", self.Leng) .. " , " .. string.format("%.2f", self.Leng * 0.0254) .. " , " .. string.format("%.2f", self.Leng * 2.54), font, Vec2[2].x, Vec2[2].y + 30, Color(0, 200, 0, 255), TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER)
                         col = Color(0, 255, 255, 255)
                         local val1 = self:ToScreen2(self.lat.pos + JG.stools.Data.precision_mover.Ent:GetRight() * self.dist)
-                        surface.DrawCircle(val1.x, val1.y, 20, col)
+                        moverCircle(val1.x, val1.y, 20, col)
                     elseif self.coordS == 3 then
-                        surface.SetDrawColor(col)
-                        surface.DrawLine(Vec2_2.x, Vec2_2.y, Vec2[3].x, Vec2[3].y)
+                        moverSetColor(col)
+                        moverLine(Vec2_2.x, Vec2_2.y, Vec2[3].x, Vec2[3].y)
                         draw.SimpleText("+Up Yaw : " .. string.format("%.1f", Ang.y) .. "º", font, Vec2[3].x, Vec2[3].y, Color(0, 0, 200, 255), TAC, TAC)
-                        surface.DrawCircle(dot[3].x, dot[3].y, 10, col)
+                        moverCircle(dot[3].x, dot[3].y, 10, col)
                         draw.SimpleText("Length ( inch , m , cm) : " .. string.format("%.2f", self.Leng) .. " , " .. string.format("%.2f", self.Leng * 0.0254) .. " , " .. string.format("%.2f", self.Leng * 2.54), font, Vec2[3].x, Vec2[3].y + 30, Color(0, 0, 200, 255), TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER)
                         col = Color(0, 255, 255, 255)
                         local val1 = self:ToScreen2(self.lat.pos + JG.stools.Data.precision_mover.Ent:GetUp() * self.dist)
-                        surface.DrawCircle(val1.x, val1.y, 20, col)
+                        moverCircle(val1.x, val1.y, 20, col)
                     end
                 else
                     col = Color(255, 255, 0, 255)
                     local TAC = TEXT_ALIGN_CENTER
 
                     if self.coordS == 1 then
-                        surface.SetDrawColor(col)
-                        surface.DrawLine(Vec2_2.x, Vec2_2.y, Vec2[1].x, Vec2[1].y)
+                        moverSetColor(col)
+                        moverLine(Vec2_2.x, Vec2_2.y, Vec2[1].x, Vec2[1].y)
                         draw.SimpleText("+Forward Roll", font, Vec2[1].x, Vec2[1].y, Color(200, 0, 0, 255), TAC, TAC)
-                        surface.DrawCircle(dot[1].x, dot[1].y, 10, col)
+                        moverCircle(dot[1].x, dot[1].y, 10, col)
                         draw.SimpleText("Length ( inch , m , cm) : " .. string.format("%.2f", self.Leng) .. " , " .. string.format("%.2f", self.Leng * 0.0254) .. " , " .. string.format("%.2f", self.Leng * 2.54), font, Vec2[1].x, Vec2[1].y + 30, Color(2000, 0, 0, 255), TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER)
                         col = Color(0, 255, 255, 255)
                         local val1 = self:ToScreen2(self.lat.pos + JG.stools.Data.precision_mover.Ent:GetForward() * self.dist)
-                        surface.DrawCircle(val1.x, val1.y, 20, col)
+                        moverCircle(val1.x, val1.y, 20, col)
                     elseif self.coordS == 2 then
-                        surface.SetDrawColor(col)
-                        surface.DrawLine(Vec2_2.x, Vec2_2.y, Vec2[2].x, Vec2[2].y)
+                        moverSetColor(col)
+                        moverLine(Vec2_2.x, Vec2_2.y, Vec2[2].x, Vec2[2].y)
                         draw.SimpleText("+Right Pitch", font, Vec2[2].x, Vec2[2].y, Color(0, 200, 0, 255), TAC, TAC)
-                        surface.DrawCircle(dot[2].x, dot[2].y, 10, col)
+                        moverCircle(dot[2].x, dot[2].y, 10, col)
                         draw.SimpleText("Length ( inch , m , cm) : " .. string.format("%.2f", self.Leng) .. " , " .. string.format("%.2f", self.Leng * 0.0254) .. " , " .. string.format("%.2f", self.Leng * 2.54), font, Vec2[2].x, Vec2[2].y + 30, Color(0, 200, 0, 255), TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER)
                         col = Color(0, 255, 255, 255)
                         local val1 = self:ToScreen2(self.lat.pos + JG.stools.Data.precision_mover.Ent:GetRight() * self.dist)
-                        surface.DrawCircle(val1.x, val1.y, 20, col)
+                        moverCircle(val1.x, val1.y, 20, col)
                     elseif self.coordS == 3 then
-                        surface.SetDrawColor(col)
-                        surface.DrawLine(Vec2_2.x, Vec2_2.y, Vec2[3].x, Vec2[3].y)
+                        moverSetColor(col)
+                        moverLine(Vec2_2.x, Vec2_2.y, Vec2[3].x, Vec2[3].y)
                         draw.SimpleText("+Up Yaw", font, Vec2[3].x, Vec2[3].y, Color(0, 0, 200, 255), TAC, TAC)
-                        surface.DrawCircle(dot[3].x, dot[3].y, 10, col)
+                        moverCircle(dot[3].x, dot[3].y, 10, col)
                         draw.SimpleText("Length ( inch , m , cm) : " .. string.format("%.2f", self.Leng) .. " , " .. string.format("%.2f", self.Leng * 0.0254) .. " , " .. string.format("%.2f", self.Leng * 2.54), font, Vec2[3].x, Vec2[3].y + 30, Color(0, 0, 200, 255), TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER)
                         col = Color(0, 255, 255, 255)
                         local val1 = self:ToScreen2(self.lat.pos + JG.stools.Data.precision_mover.Ent:GetUp() * self.dist)
-                        surface.DrawCircle(val1.x, val1.y, 20, col)
+                        moverCircle(val1.x, val1.y, 20, col)
                     end
                 end
                 --draw.SimpleText("" , Color(0 ,0,200,255) , TEXT_ALIGN_CENTER,TEXT_ALIGN_CENTER)
             else
                 if JG.stools.Data.precision_mover.WL == false then
                     local TAC = TEXT_ALIGN_CENTER
-                    surface.SetDrawColor(self.coordS == 1 and Color(255, 255, 0, 255) or Color(255, 0, 0, 255))
-                    surface.DrawLine(Vec2_2.x, Vec2_2.y, Vec2[1].x, Vec2[1].y)
+                    moverSetColor(self.coordS == 1 and Color(255, 255, 0, 255) or Color(255, 0, 0, 255))
+                    moverLine(Vec2_2.x, Vec2_2.y, Vec2[1].x, Vec2[1].y)
                     draw.SimpleText("+Forward Roll : " .. string.format("%.1f", Ang.r) .. "º", font, Vec2[1].x, Vec2[1].y, Color(200, 0, 0, 255), TAC, TAC)
-                    surface.SetDrawColor(self.coordS == 2 and Color(255, 255, 0, 255) or Color(0, 255, 0, 255))
-                    surface.DrawLine(Vec2_2.x, Vec2_2.y, Vec2[2].x, Vec2[2].y)
+                    moverSetColor(self.coordS == 2 and Color(255, 255, 0, 255) or Color(0, 255, 0, 255))
+                    moverLine(Vec2_2.x, Vec2_2.y, Vec2[2].x, Vec2[2].y)
                     draw.SimpleText("+Right Pitch : " .. string.format("%.1f", Ang.p) .. "º", font, Vec2[2].x, Vec2[2].y, Color(0, 200, 0, 255), TAC, TAC)
-                    surface.SetDrawColor(self.coordS == 3 and Color(255, 255, 0, 255) or Color(0, 0, 255, 255))
-                    surface.DrawLine(Vec2_2.x, Vec2_2.y, Vec2[3].x, Vec2[3].y)
+                    moverSetColor(self.coordS == 3 and Color(255, 255, 0, 255) or Color(0, 0, 255, 255))
+                    moverLine(Vec2_2.x, Vec2_2.y, Vec2[3].x, Vec2[3].y)
                     draw.SimpleText("+Up Yaw : " .. string.format("%.1f", Ang.y) .. "º", font, Vec2[3].x, Vec2[3].y, Color(0, 0, 200, 255), TAC, TAC)
                     col = self.coordS == 1 and Color(255, 255, 0, 255) or Color(255, 127, 0, 255)
-                    surface.DrawCircle(dot[1].x, dot[1].y, 10, col)
+                    moverCircle(dot[1].x, dot[1].y, 10, col)
                     col = self.coordS == 2 and Color(255, 255, 0, 255) or Color(255, 127, 0, 255)
-                    surface.DrawCircle(dot[2].x, dot[2].y, 10, col)
+                    moverCircle(dot[2].x, dot[2].y, 10, col)
                     col = self.coordS == 3 and Color(255, 255, 0, 255) or Color(255, 127, 0, 255)
-                    surface.DrawCircle(dot[3].x, dot[3].y, 10, col)
+                    moverCircle(dot[3].x, dot[3].y, 10, col)
                 else
                     local TAC = TEXT_ALIGN_CENTER
-                    surface.SetDrawColor(self.coordS == 1 and Color(255, 255, 0, 255) or Color(255, 0, 0, 255))
-                    surface.DrawLine(Vec2_2.x, Vec2_2.y, Vec2[1].x, Vec2[1].y)
+                    moverSetColor(self.coordS == 1 and Color(255, 255, 0, 255) or Color(255, 0, 0, 255))
+                    moverLine(Vec2_2.x, Vec2_2.y, Vec2[1].x, Vec2[1].y)
                     draw.SimpleText("+Forward Roll", font, Vec2[1].x, Vec2[1].y, Color(200, 0, 0, 255), TAC, TAC)
-                    surface.SetDrawColor(self.coordS == 2 and Color(255, 255, 0, 255) or Color(0, 255, 0, 255))
-                    surface.DrawLine(Vec2_2.x, Vec2_2.y, Vec2[2].x, Vec2[2].y)
+                    moverSetColor(self.coordS == 2 and Color(255, 255, 0, 255) or Color(0, 255, 0, 255))
+                    moverLine(Vec2_2.x, Vec2_2.y, Vec2[2].x, Vec2[2].y)
                     draw.SimpleText("+Right Pitch", font, Vec2[2].x, Vec2[2].y, Color(0, 200, 0, 255), TAC, TAC)
-                    surface.SetDrawColor(self.coordS == 3 and Color(255, 255, 0, 255) or Color(0, 0, 255, 255))
-                    surface.DrawLine(Vec2_2.x, Vec2_2.y, Vec2[3].x, Vec2[3].y)
+                    moverSetColor(self.coordS == 3 and Color(255, 255, 0, 255) or Color(0, 0, 255, 255))
+                    moverLine(Vec2_2.x, Vec2_2.y, Vec2[3].x, Vec2[3].y)
                     draw.SimpleText("+Up Yaw", font, Vec2[3].x, Vec2[3].y, Color(0, 0, 200, 255), TAC, TAC)
                     col = self.coordS == 1 and Color(255, 255, 0, 255) or Color(255, 127, 0, 255)
-                    surface.DrawCircle(dot[1].x, dot[1].y, 10, col)
+                    moverCircle(dot[1].x, dot[1].y, 10, col)
                     col = self.coordS == 2 and Color(255, 255, 0, 255) or Color(255, 127, 0, 255)
-                    surface.DrawCircle(dot[2].x, dot[2].y, 10, col)
+                    moverCircle(dot[2].x, dot[2].y, 10, col)
                     col = self.coordS == 3 and Color(255, 255, 0, 255) or Color(255, 127, 0, 255)
-                    surface.DrawCircle(dot[3].x, dot[3].y, 10, col)
+                    moverCircle(dot[3].x, dot[3].y, 10, col)
                 end
             end
 
@@ -1334,7 +1598,7 @@ function TOOL:Hud2()
 end
 
 function TOOL:DrawToolScreen( width, height )
-    surface.SetDrawColor( Color( 20, 20, 20 ) )
+    moverSetColor( Color( 20, 20, 20 ) )
     surface.DrawRect( 0, 0, width, height )
 
     if PA_funcs then
