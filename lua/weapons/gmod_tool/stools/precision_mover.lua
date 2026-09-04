@@ -16,16 +16,12 @@ if (CLIENT) then
     language.Add("Tool.precision_mover.right", "Grab an axis - hold SPRINT to enable snapping")
     language.Add("Tool.precision_mover.reload", "Deselect prop")
     --language.Add("Tool.precision_mover.0", "Left: Select a prop, Shift+Left: Select a base point, Right: Grab axis, Shift+Right: Snap, R: Unselect")
-    JG = JG or {}
-    JG.stools = JG.stools or {}
-    JG.stools.loadedP = JG.stools.loadedP or {}
-    JG.stools.loadedP.precision_mover = JG.stools.loadedP.precision_mover or false
-    JG = JG or {}
-    JG.stools = JG.stools or {}
-    JG.stools.CP = JG.stools.CP or {}
-    JG.stools.CP.precision_mover = JG.stools.CP.precision_mover or {}
-    JG.stools.Data = JG.stools.Data or {}
-    JG.stools.Data.precision_mover = JG.stools.Data.precision_mover or {}
+
+    PrecisionAlign = PrecisionAlign or {}
+    PrecisionAlign.Mover = PrecisionAlign.Mover or {}
+    PrecisionAlign.Mover.Loaded = PrecisionAlign.Mover.Loaded or false
+    PrecisionAlign.Mover.CP = PrecisionAlign.Mover.CP or {}
+    PrecisionAlign.Mover.Data = PrecisionAlign.Mover.Data or {}
 end
 
 if SERVER then
@@ -103,26 +99,26 @@ function TOOL:LeftClick(trace)
 
     if owner:KeyDown(IN_SPEED) then
         if PA_funcs and PA_funcs.point_global(PA_selected_point) == false then
-            JG.stools.Data.precision_mover.BasePos = trace.HitPos
+            PrecisionAlign.Mover.Data.BasePos = trace.HitPos
         else
-            JG.stools.Data.precision_mover.BasePos = PA_funcs.point_global(PA_selected_point).origin
+            PrecisionAlign.Mover.Data.BasePos = PA_funcs.point_global(PA_selected_point).origin
         end
     else
         -- Constructs take priority over props, but only within a tight radius.
         local construct = PickConstruct()
 
         if construct then
-            JG.stools.Data.precision_mover.Ent = construct
-            JG.stools.CP.precision_mover.DLabel[1]:SetText(construct:GetLabel())
-            JG.stools.CP.precision_mover.DLabel[1]:SizeToContents()
+            PrecisionAlign.Mover.Data.Ent = construct
+            PrecisionAlign.Mover.CP.DLabel[1]:SetText(construct:GetLabel())
+            PrecisionAlign.Mover.CP.DLabel[1]:SizeToContents()
         else
-            JG.stools.Data.precision_mover.Ent = trace.Entity:IsValid() and not trace.Entity:IsNPC() and not trace.Entity:IsPlayer() and not trace.Entity:IsWorld() and trace.Entity or NULL
+            PrecisionAlign.Mover.Data.Ent = trace.Entity:IsValid() and not trace.Entity:IsNPC() and not trace.Entity:IsPlayer() and not trace.Entity:IsWorld() and trace.Entity or NULL
 
-            if JG.stools.Data.precision_mover.Ent ~= NULL then
-                JG.stools.CP.precision_mover.DAdjustableModelPanel[1]:SetModel(JG.stools.Data.precision_mover.Ent:GetModel())
-                JG.stools.CP.precision_mover.DLabel[1]:SetText(JG.stools.Data.precision_mover.Ent:GetModel())
-                JG.stools.CP.precision_mover.DLabel[1]:SizeToContents()
-                JG.stools.Data.precision_mover.Ent:SetRenderMode(1)
+            if PrecisionAlign.Mover.Data.Ent ~= NULL then
+                PrecisionAlign.Mover.CP.DAdjustableModelPanel[1]:SetModel(PrecisionAlign.Mover.Data.Ent:GetModel())
+                PrecisionAlign.Mover.CP.DLabel[1]:SetText(PrecisionAlign.Mover.Data.Ent:GetModel())
+                PrecisionAlign.Mover.CP.DLabel[1]:SizeToContents()
+                PrecisionAlign.Mover.Data.Ent:SetRenderMode(1)
             end
         end
     end
@@ -168,7 +164,7 @@ function TOOL:RequestTraceSnap(startpos, dir)
         self.lastTraceReqDir = dir
         self.lastTraceReqTime = now
 
-        local ent = JG.stools.Data.precision_mover.Ent
+        local ent = PrecisionAlign.Mover.Data.Ent
         local ignoreEnt = (not IsConstructProxy(ent)) and ent or NULL
 
         net.Start("PMover_TraceReq")
@@ -439,7 +435,7 @@ function TOOL:RightClick(trace)
         return true
     end
 
-    if JG.stools.Data.precision_mover.Ent:IsValid() == false then return end
+    if PrecisionAlign.Mover.Data.Ent:IsValid() == false then return end
 
     if self.coordS > 0 or self.AngS > 0 then
         local owner = self:GetOwner()
@@ -453,23 +449,23 @@ function TOOL:RightClick(trace)
 
         if self.lat.act == false then
             self.lat.act = true
-            self.lat.pos = JG.stools.Data.precision_mover.BasePos == NULL and JG.stools.Data.precision_mover.Ent:GetPos() or JG.stools.Data.precision_mover.BasePos
-            self.lat.pos1 = JG.stools.Data.precision_mover.Ent:GetPos()
-            self.lat.mainpos = JG.stools.Data.precision_mover.Ent:GetPos()
-            self.lat.ang = JG.stools.Data.precision_mover.Ent:GetAngles()
+            self.lat.pos = PrecisionAlign.Mover.Data.BasePos == NULL and PrecisionAlign.Mover.Data.Ent:GetPos() or PrecisionAlign.Mover.Data.BasePos
+            self.lat.pos1 = PrecisionAlign.Mover.Data.Ent:GetPos()
+            self.lat.mainpos = PrecisionAlign.Mover.Data.Ent:GetPos()
+            self.lat.ang = PrecisionAlign.Mover.Data.Ent:GetAngles()
 
             if self.AngS > 0 then
                 local amount, dir = Vector(), Vector()
 
-                if JG.stools.Data.precision_mover.WL == false then
+                if PrecisionAlign.Mover.Data.WL == false then
                     if self.AngS == 1 then
-                        dir = JG.stools.Data.precision_mover.Ent:GetForward()
+                        dir = PrecisionAlign.Mover.Data.Ent:GetForward()
                         amount = self:IntersectRayWithPlane(self.lat.pos, dir, owner:EyePos(), owner:EyeAngles():Forward())
                     elseif self.AngS == 2 then
-                        dir = JG.stools.Data.precision_mover.Ent:GetRight()
+                        dir = PrecisionAlign.Mover.Data.Ent:GetRight()
                         amount = self:IntersectRayWithPlane(self.lat.pos, dir, owner:EyePos(), owner:EyeAngles():Forward())
                     elseif self.AngS == 3 then
-                        dir = JG.stools.Data.precision_mover.Ent:GetUp()
+                        dir = PrecisionAlign.Mover.Data.Ent:GetUp()
                         amount = self:IntersectRayWithPlane(self.lat.pos, dir, owner:EyePos(), owner:EyeAngles():Forward())
                     end
                 else
@@ -501,15 +497,15 @@ function TOOL:RightClick(trace)
             local len
             local dir
 
-            if JG.stools.Data.precision_mover.WL == false then
+            if PrecisionAlign.Mover.Data.WL == false then
                 if self.coordS == 1 then
-                    dir = JG.stools.Data.precision_mover.Ent:GetForward()
-                    vec = self:IntersectRayWithPlane(self.lat.pos + dir * self.dist, JG.stools.Data.precision_mover.Ent:GetUp(), owner:EyePos(), owner:EyeAngles():Forward())
+                    dir = PrecisionAlign.Mover.Data.Ent:GetForward()
+                    vec = self:IntersectRayWithPlane(self.lat.pos + dir * self.dist, PrecisionAlign.Mover.Data.Ent:GetUp(), owner:EyePos(), owner:EyeAngles():Forward())
                 elseif self.coordS == 2 then
-                    dir = JG.stools.Data.precision_mover.Ent:GetRight()
-                    vec = self:IntersectRayWithPlane(self.lat.pos + dir * self.dist, JG.stools.Data.precision_mover.Ent:GetUp(), owner:EyePos(), owner:EyeAngles():Forward())
+                    dir = PrecisionAlign.Mover.Data.Ent:GetRight()
+                    vec = self:IntersectRayWithPlane(self.lat.pos + dir * self.dist, PrecisionAlign.Mover.Data.Ent:GetUp(), owner:EyePos(), owner:EyeAngles():Forward())
                 elseif self.coordS == 3 then
-                    dir = JG.stools.Data.precision_mover.Ent:GetUp()
+                    dir = PrecisionAlign.Mover.Data.Ent:GetUp()
                     local val1 = (self.lat.pos - owner:EyePos()):Angle()
                     val1.p = 0
                     val1 = val1:Forward()
@@ -537,7 +533,7 @@ function TOOL:RightClick(trace)
             vec2 = vec:Dot(dir)
             local var3 = vec2 * len + self.dist
 
-            if owner:KeyDown(IN_SPEED) and JG.stools.Data.precision_mover.SnapMode == "trace" then
+            if owner:KeyDown(IN_SPEED) and PrecisionAlign.Mover.Data.SnapMode == "trace" then
                 -- Trace snap: shoot along the direction the user is dragging and snap
                 -- the object onto the nearest surface (traced server-side for accuracy).
                 local moveDir = dir * (var3 >= 0 and -1 or 1)
@@ -545,27 +541,27 @@ function TOOL:RightClick(trace)
 
                 if self.traceSnap and self.traceSnap.hit then
                     local hitpos = self.traceSnap.pos
-                    JG.stools.Data.precision_mover.Ent:SetPos(hitpos)
+                    PrecisionAlign.Mover.Data.Ent:SetPos(hitpos)
                     self.Leng = (hitpos - self.lat.pos):Dot(dir)
                 else
                     -- No result yet; move freely until the server replies.
-                    JG.stools.Data.precision_mover.Ent:SetPos(self.lat.pos - dir * var3)
+                    PrecisionAlign.Mover.Data.Ent:SetPos(self.lat.pos - dir * var3)
                     self.Leng = -var3
                 end
             elseif owner:KeyDown(IN_SPEED) then
-                local val = JG.stools.CP.precision_mover.DNumSlider[2]:GetValue()
+                local val = PrecisionAlign.Mover.CP.DNumSlider[2]:GetValue()
                 local val2 = var3 < 0 and math.Round(var3 / val) * val or math.floor(var3 / val) * val
-                JG.stools.Data.precision_mover.Ent:SetPos(self.lat.pos - dir * val2)
+                PrecisionAlign.Mover.Data.Ent:SetPos(self.lat.pos - dir * val2)
                 local val3 = self.coordS
                 self.Leng = val3 == 2 and val2 or -val2
             else
-                JG.stools.Data.precision_mover.Ent:SetPos(self.lat.pos - dir * var3)
+                PrecisionAlign.Mover.Data.Ent:SetPos(self.lat.pos - dir * var3)
                 self.Leng = -var3
             end
         elseif self.AngS > 0 then
             local amount, dir
 
-            if JG.stools.Data.precision_mover.WL == false then
+            if PrecisionAlign.Mover.Data.WL == false then
                 if self.AngS == 1 then
                     dir = self.lat.ang:Forward()
                     amount = self:IntersectRayWithPlane(self.lat.pos, dir, owner:EyePos(), owner:EyeAngles():Forward())
@@ -606,7 +602,7 @@ function TOOL:RightClick(trace)
                 val3 = (val2 > 0 and 1 or -1)
 
                 if owner:KeyDown(IN_SPEED) then
-                    local val = JG.stools.CP.precision_mover.DNumSlider[1]:GetValue()
+                    local val = PrecisionAlign.Mover.CP.DNumSlider[1]:GetValue()
                     local mon = amount * val3
                     mon = mon < 0 and math.ceil(mon / val) * val or math.floor(mon / val) * val
                     ang:RotateAroundAxis(dir, mon)
@@ -617,7 +613,7 @@ function TOOL:RightClick(trace)
                 self.amount = amount * val3
             else
                 if owner:KeyDown(IN_SPEED) then
-                    local val = JG.stools.CP.precision_mover.DNumSlider[1]:GetValue()
+                    local val = PrecisionAlign.Mover.CP.DNumSlider[1]:GetValue()
                     local var0 = amount
                     local val0 = self.lat.planedir:Angle()
                     val0:Normalize()
@@ -662,22 +658,22 @@ function TOOL:RightClick(trace)
                 end
             end
 
-            JG.stools.Data.precision_mover.Ent:SetAngles(ang)
+            PrecisionAlign.Mover.Data.Ent:SetAngles(ang)
 
-            if JG.stools.Data.precision_mover.BasePos ~= NULL then
-                local vec = self.lat.mainpos - JG.stools.Data.precision_mover.BasePos
+            if PrecisionAlign.Mover.Data.BasePos ~= NULL then
+                local vec = self.lat.mainpos - PrecisionAlign.Mover.Data.BasePos
                 local len = vec:Length()
                 dir = vec:GetNormalized()
                 ang = dir:Angle()
                 ang:Normalize()
                 local snap = self.UseSnap
 
-                if JG.stools.Data.precision_mover.WL == false then
+                if PrecisionAlign.Mover.Data.WL == false then
                     local mon
 
                     if Lalt == false then
                         if snap == true then
-                            local var1 = JG.stools.CP.precision_mover.DNumSlider[1]:GetValue()
+                            local var1 = PrecisionAlign.Mover.CP.DNumSlider[1]:GetValue()
                             mon = amount * (val2 > 0 and 1 or -1) --* self.lat.val1
                             mon = mon < 0 and math.ceil(mon / var1) * var1 or math.floor(mon / var1) * var1
                         else
@@ -685,7 +681,7 @@ function TOOL:RightClick(trace)
                         end
                     else
                         if snap == true then
-                            local var1 = JG.stools.CP.precision_mover.DNumSlider[1]:GetValue()
+                            local var1 = PrecisionAlign.Mover.CP.DNumSlider[1]:GetValue()
                             mon = self.amount1 + self.amount
                             mon = mon < 0 and math.ceil(mon / var1) * var1 or math.floor(mon / var1) * var1
                             mon = -mon
@@ -695,18 +691,18 @@ function TOOL:RightClick(trace)
                     end
 
                     if self.AngS == 1 then
-                        ang:RotateAroundAxis(JG.stools.Data.precision_mover.Ent:GetForward(), mon)
+                        ang:RotateAroundAxis(PrecisionAlign.Mover.Data.Ent:GetForward(), mon)
                     elseif self.AngS == 2 then
-                        ang:RotateAroundAxis(JG.stools.Data.precision_mover.Ent:GetRight(), mon)
+                        ang:RotateAroundAxis(PrecisionAlign.Mover.Data.Ent:GetRight(), mon)
                     elseif self.AngS == 3 then
-                        ang:RotateAroundAxis(JG.stools.Data.precision_mover.Ent:GetUp(), mon)
+                        ang:RotateAroundAxis(PrecisionAlign.Mover.Data.Ent:GetUp(), mon)
                     end
-                elseif JG.stools.Data.precision_mover.WL == true then
+                elseif PrecisionAlign.Mover.Data.WL == true then
                     local mon
 
                     if Lalt == false then
                         if snap == true then
-                            local var1 = JG.stools.CP.precision_mover.DNumSlider[1]:GetValue()
+                            local var1 = PrecisionAlign.Mover.CP.DNumSlider[1]:GetValue()
                             mon = amount * (val2 > 0 and 1 or -1)
                             mon = mon < 0 and math.ceil(mon / var1) * var1 or math.floor(mon / var1) * var1
                         else
@@ -729,12 +725,12 @@ function TOOL:RightClick(trace)
                     end
                 end
 
-                JG.stools.Data.precision_mover.Ent:SetPos(JG.stools.Data.precision_mover.BasePos + ang:Forward() * len)
+                PrecisionAlign.Mover.Data.Ent:SetPos(PrecisionAlign.Mover.Data.BasePos + ang:Forward() * len)
             end
         end
 
-        self.lat.lopos = JG.stools.Data.precision_mover.Ent:GetPos()
-        self.lat.loang = JG.stools.Data.precision_mover.Ent:GetAngles()
+        self.lat.lopos = PrecisionAlign.Mover.Data.Ent:GetPos()
+        self.lat.loang = PrecisionAlign.Mover.Data.Ent:GetAngles()
     end
 
     return false
@@ -755,22 +751,22 @@ function TOOL:Think()
         local tr = util.TraceLine({
             start = owner:EyePos(),
             endpos = owner:EyePos() + owner:EyeAngles():Forward() * 50000,
-            filter = {self, owner, JG.stools.Data.precision_mover.Ent}
+            filter = {self, owner, PrecisionAlign.Mover.Data.Ent}
         })
 
         self:RightClick(tr)
     end
 
     if self.la == true and self.Hold == false then
-        if IsConstructProxy(JG.stools.Data.precision_mover.Ent) then
+        if IsConstructProxy(PrecisionAlign.Mover.Data.Ent) then
             -- Constructs are clientside; the drag already applied the change live.
             surface.PlaySound("buttons/button15.wav")
         elseif (self.lat.lopos - self.lat.pos):Length() < 5000 then
-            net.Start("Inf_Move")
+            net.Start("PrecisionMover_Move")
             net.WriteInt(self.coordS, 3)
             net.WriteInt(self.AngS, 3)
-            net.WriteInt(JG.stools.Data.precision_mover.Copy == true and 1 or 0, 2)
-            net.WriteInt(JG.stools.Data.precision_mover.Ent:EntIndex(), 12)
+            net.WriteInt(PrecisionAlign.Mover.Data.Copy == true and 1 or 0, 2)
+            net.WriteInt(PrecisionAlign.Mover.Data.Ent:EntIndex(), 12)
             net.WriteVector(self.lat.lopos)
             net.WriteAngle(self.lat.loang)
             net.WriteVector(self.lat.pos1)
@@ -834,20 +830,20 @@ function TOOL:Think()
             }
         end)
 
-        concommand.Add("mover_reloadui", function()
+        concommand.Add("precision_mover_reloadui", function()
             self.first = false
-            JG.stools.loadedP.precision_mover = false
+            PrecisionAlign.Mover.Loaded = false
         end)
 
         self.first = true
         self.ratio = ScrW() / ScrH()
 
-        if JG.stools.loadedP.precision_mover == false then
+        if PrecisionAlign.Mover.Loaded == false then
             self.panel = controlpanel.Get("precision_mover")
 
             if self.panel:GetInitialized() == false or (g_SpawnMenu:IsVisible() == false and g_ContextMenu:IsVisible() == false) then
                 timer.Simple(0.01, function()
-                    RunConsoleCommand("mover_reloadui")
+                    RunConsoleCommand("precision_mover_reloadui")
                 end)
 
                 return
@@ -855,7 +851,7 @@ function TOOL:Think()
 
             self.panel:Clear()
 
-            JG.stools.Data.precision_mover = {
+            PrecisionAlign.Mover.Data = {
                 Ent = NULL,
                 BasePos = NULL,
                 WL = false,
@@ -876,8 +872,8 @@ function TOOL:Think()
                 end
             end
 
-            JG.stools.CP.precision_mover.DComboBox = {}
-            local t = JG.stools.CP.precision_mover.DComboBox
+            PrecisionAlign.Mover.CP.DComboBox = {}
+            local t = PrecisionAlign.Mover.CP.DComboBox
             local baseY = 30
 
             t[1] = vgui.Create("DComboBox", self.panel)
@@ -889,9 +885,9 @@ function TOOL:Think()
 
             t[1].OnSelect = function(_, index)
                 if index == 2 then
-                    JG.stools.Data.precision_mover.WL = false
+                    PrecisionAlign.Mover.Data.WL = false
                 else
-                    JG.stools.Data.precision_mover.WL = true
+                    PrecisionAlign.Mover.Data.WL = true
                 end
             end
 
@@ -906,11 +902,11 @@ function TOOL:Think()
             t[2]:SetTooltip("Snapping behaviour while holding SPRINT:\nIncrement - round to the snap sliders.\nTrace - snap to the nearest surface along the drag.")
 
             t[2].OnSelect = function(_, index)
-                JG.stools.Data.precision_mover.SnapMode = index == 2 and "trace" or "increment"
+                PrecisionAlign.Mover.Data.SnapMode = index == 2 and "trace" or "increment"
             end
 
-            JG.stools.CP.precision_mover.DCheckBox = {}
-            t = JG.stools.CP.precision_mover.DCheckBox
+            PrecisionAlign.Mover.CP.DCheckBox = {}
+            t = PrecisionAlign.Mover.CP.DCheckBox
             t[1] = vgui.Create("DCheckBoxLabel", self.panel)
             t[1]:SetPos(10, baseY + 35)
             t[1]:SetSize(130, 20)
@@ -919,7 +915,7 @@ function TOOL:Think()
             t[1].Label:SetTextColor(Color(255, 0, 0, 255))
 
             t[1].OnChange = function(panel, a)
-                JG.stools.Data.precision_mover.Axis = a
+                PrecisionAlign.Mover.Data.Axis = a
 
                 if a == true then
                     panel:SetText("Rotate - Axis")
@@ -938,7 +934,7 @@ function TOOL:Think()
             t[2]:SetTooltip("Each time you move props,\nduplicates the prop on original position.")
 
             t[2].OnChange = function(panel, a)
-                JG.stools.Data.precision_mover.Copy = a
+                PrecisionAlign.Mover.Data.Copy = a
 
                 if a == true then
                     panel:SetText("Copy - Active")
@@ -949,34 +945,34 @@ function TOOL:Think()
                 end
             end
 
-            JG.stools.CP.precision_mover.Binder = {}
-            t = JG.stools.CP.precision_mover.Binder
+            PrecisionAlign.Mover.CP.Binder = {}
+            t = PrecisionAlign.Mover.CP.Binder
             t[1] = vgui.Create("DBinder", self.panel)
             t[1]:SetSize(90, 40)
             t[1]:SetPos(10, baseY + 60)
-            JG.stools.CP.precision_mover.Buttons = {}
-            t = JG.stools.CP.precision_mover.Buttons
+            PrecisionAlign.Mover.CP.Buttons = {}
+            t = PrecisionAlign.Mover.CP.Buttons
             t[1] = vgui.Create("DButton", self.panel)
             t[1]:SetPos(10, baseY + 100)
             t[1]:SetSize(90, 40)
             t[1]:SetText("Reset BasePos")
 
             t[1].DoClick = function()
-                JG.stools.Data.precision_mover.BasePos = NULL
+                PrecisionAlign.Mover.Data.BasePos = NULL
             end
 
-            t = JG.stools.CP.precision_mover.Buttons
+            t = PrecisionAlign.Mover.CP.Buttons
             t[2] = vgui.Create("DButton", self.panel)
             t[2]:SetPos(10, baseY + 140)
             t[2]:SetSize(90, 40)
             t[2]:SetText("Reset Ent Info")
 
             t[2].DoClick = function()
-                JG.stools.Data.precision_mover.Ent = NULL
+                PrecisionAlign.Mover.Data.Ent = NULL
             end
 
-            JG.stools.CP.precision_mover.DNumSlider = {}
-            t = JG.stools.CP.precision_mover.DNumSlider
+            PrecisionAlign.Mover.CP.DNumSlider = {}
+            t = PrecisionAlign.Mover.CP.DNumSlider
             t[1] = vgui.Create("DNumSlider", self.panel)
             t[1]:SetPos(10, baseY + 200)
             t[1]:SetText("Snap Amount Deg")
@@ -992,7 +988,7 @@ function TOOL:Think()
                 draw.RoundedBox(3, 0, 0, 100, 100, Color(255, 255, 255, 100))
             end]]
 
-            t = JG.stools.CP.precision_mover.DNumSlider
+            t = PrecisionAlign.Mover.CP.DNumSlider
             t[2] = vgui.Create("DNumSlider", self.panel)
             t[2]:SetPos(10, baseY + 230)
             t[2]:SetText("Snap Amount Pos")
@@ -1008,8 +1004,8 @@ function TOOL:Think()
                 draw.RoundedBox(3, 0, 0, 100, 100, Color(255, 255, 255, 100))
             end]]
 
-            JG.stools.CP.precision_mover.DLabel = {}
-            t = JG.stools.CP.precision_mover.DLabel
+            PrecisionAlign.Mover.CP.DLabel = {}
+            t = PrecisionAlign.Mover.CP.DLabel
             t[1] = vgui.Create("DLabel", self.panel)
             t[1]:SetPos(10, baseY + 260)
             t[1]:SetSize(10, 10)
@@ -1017,8 +1013,8 @@ function TOOL:Think()
             t[1]:SizeToContents()
             t[1]:SetPaintBackground(true)
 
-            JG.stools.CP.precision_mover.DPanel = {}
-            t = JG.stools.CP.precision_mover.DPanel
+            PrecisionAlign.Mover.CP.DPanel = {}
+            t = PrecisionAlign.Mover.CP.DPanel
             t[1] = vgui.Create("DPanel", self.panel)
             t[1]:SetPos(10, baseY + 290)
             local val = self.panel:GetSize()
@@ -1028,15 +1024,15 @@ function TOOL:Think()
                 val = self.panel:GetSize()
                 val = val - 20
                 t[1]:SetSize(val, 300)
-                JG.stools.CP.precision_mover.DAdjustableModelPanel[1]:SetSize(val, val)
+                PrecisionAlign.Mover.CP.DAdjustableModelPanel[1]:SetSize(val, val)
                 local _, y = a:GetSize()
                 draw.RoundedBox(6, 5, 5, val - 10, y - 10, Color(0, 0, 0, 100))
                 draw.RoundedBox(6, 0, 0, val, y, Color(0, 0, 0, 100))
             end
 
-            JG.stools.CP.precision_mover.DAdjustableModelPanel = {}
-            t = JG.stools.CP.precision_mover.DAdjustableModelPanel
-            t[1] = vgui.Create("DModelPanel", JG.stools.CP.precision_mover.DPanel[1])
+            PrecisionAlign.Mover.CP.DAdjustableModelPanel = {}
+            t = PrecisionAlign.Mover.CP.DAdjustableModelPanel
+            t[1] = vgui.Create("DModelPanel", PrecisionAlign.Mover.CP.DPanel[1])
             t[1]:SetPos(0, 0)
             t[1]:SetSize(200, 200)
             t[1]:SetLookAt(vector_origin)
@@ -1047,10 +1043,10 @@ function TOOL:Think()
                 ["$ignorez"] = "1"
             }
 
-            self.Mat = CreateMaterial("JG_MoverMat", "UnlitGeneric", params)
+            self.Mat = CreateMaterial("PrecisionMover_Mat", "UnlitGeneric", params)
 
-            hook.Add("PostDrawTranslucentRenderables", "Mover_Render", function()
-                local ent = JG.stools.Data.precision_mover.Ent
+            hook.Add("PostDrawTranslucentRenderables", "PrecisionMover_Render", function()
+                local ent = PrecisionAlign.Mover.Data.Ent
                 if not IsValid(ent) then return end
                 if IsConstructProxy(ent) then return end -- constructs have no model to highlight
                 local wep = LocalPlayer():GetActiveWeapon()
@@ -1087,17 +1083,17 @@ function TOOL:Think()
                 render.SuppressEngineLighting(false)
             end)
 
-            JG.stools.loadedP.precision_mover = true
+            PrecisionAlign.Mover.Loaded = true
         end
     end
 end
 
 if SERVER then
-    util.AddNetworkString("Inf_MoveP")
-    util.AddNetworkString("Inf_MoveA")
-    util.AddNetworkString("Inf_Move")
+    util.AddNetworkString("PrecisionMover_MoveP")
+    util.AddNetworkString("PrecisionMover_MoveA")
+    util.AddNetworkString("PrecisionMover_Move")
 
-    net.Receive("Inf_MoveP", function()
+    net.Receive("PrecisionMover_MoveP", function()
         local _, _, _, EntInd, Vec = net.ReadInt(3), net.ReadInt(3), net.ReadInt(1), net.ReadInt(12), Vector(net.ReadFloat(), net.ReadFloat(), net.ReadFloat())
         local ent = ents.GetByIndex(EntInd)
         ent:SetPos(Vec)
@@ -1108,7 +1104,7 @@ if SERVER then
         end
     end)
 
-    net.Receive("Inf_Move", function(_, ply)
+    net.Receive("PrecisionMover_Move", function(_, ply)
         local _, _, Copy, EntInd, Vec = net.ReadInt(3), net.ReadInt(3), net.ReadInt(2), net.ReadInt(12), net.ReadVector()
         local ang = net.ReadAngle()
         local ent = ents.GetByIndex(EntInd)
@@ -1198,7 +1194,7 @@ if SERVER then
         end
     end)
 
-    net.Receive("Inf_MoveA", function()
+    net.Receive("PrecisionMover_MoveA", function()
         local ent, ang = ents.GetByIndex(net.ReadInt(12)), Angle(net.ReadFloat(), net.ReadFloat(), net.ReadFloat())
         local phys = ent:GetPhysicsObject()
         ent:SetAngles(ang)
@@ -1221,10 +1217,10 @@ function TOOL:Reload()
 
     self.XYVal = {}
     self.AABB = {}
-    JG.stools.Data.precision_mover.Ent = NULL
-    JG.stools.Data.precision_mover.BasePos = NULL
-    JG.stools.CP.precision_mover.DAdjustableModelPanel[1]:SetModel("models/props_borealis/bluebarrel001.mdl")
-    JG.stools.CP.precision_mover.DLabel[1]:SetText("Default")
+    PrecisionAlign.Mover.Data.Ent = NULL
+    PrecisionAlign.Mover.Data.BasePos = NULL
+    PrecisionAlign.Mover.CP.DAdjustableModelPanel[1]:SetModel("models/props_borealis/bluebarrel001.mdl")
+    PrecisionAlign.Mover.CP.DLabel[1]:SetText("Default")
 
     return true
 end
@@ -1251,7 +1247,7 @@ function TOOL:GetSign(a, b)
         tmp.x, tmp.y, tmp.z = -tmp.x, tmp.y, tmp.z
     end
 
-    local val = JG.stools.Data.precision_mover.Ent:LocalToWorld(tmp)
+    local val = PrecisionAlign.Mover.Data.Ent:LocalToWorld(tmp)
 
     return self:ToScreen2(val)
 end
@@ -1317,15 +1313,15 @@ function TOOL:Hud1()
 
     self.UseSnap = owner:KeyDown(IN_SPEED)
 
-    if IsValid(JG.stools.Data.precision_mover.Ent) then
-        local pos = JG.stools.Data.precision_mover.BasePos == NULL and JG.stools.Data.precision_mover.Ent:GetPos() or JG.stools.Data.precision_mover.BasePos
+    if IsValid(PrecisionAlign.Mover.Data.Ent) then
+        local pos = PrecisionAlign.Mover.Data.BasePos == NULL and PrecisionAlign.Mover.Data.Ent:GetPos() or PrecisionAlign.Mover.Data.BasePos
 
-        if self.Lat ~= JG.stools.Data.precision_mover.Ent then
-            self.AABB[1], self.AABB[2] = JG.stools.Data.precision_mover.Ent:WorldSpaceAABB()
+        if self.Lat ~= PrecisionAlign.Mover.Data.Ent then
+            self.AABB[1], self.AABB[2] = PrecisionAlign.Mover.Data.Ent:WorldSpaceAABB()
             self.AABB[1], self.AABB[2] = pos - self.AABB[1], pos - self.AABB[2]
         end
 
-        local Ang = JG.stools.Data.precision_mover.Ent:GetAngles()
+        local Ang = PrecisionAlign.Mover.Data.Ent:GetAngles()
         local Vec2, Vec1 = {}, pos + Vector()
         self.dist = (Vec1 - owner:EyePos()):Length()
         local Vec2_2 = self:ToScreen2(Vec1)
@@ -1345,7 +1341,7 @@ function TOOL:Hud1()
             z = Vector(0, 0, 1)
         }
 
-        if JG.stools.Data.precision_mover.WL == false then
+        if PrecisionAlign.Mover.Data.WL == false then
             Vec2[1] = self:ToScreen2(Vec1 + Ang:Forward() * 2 * self.dist)
             dot[1] = self:ToScreen2(Vec1 + Ang:Forward() * self.dist)
             Vec2[2] = self:ToScreen2(Vec1 + Ang:Right() * 2 * self.dist)
@@ -1369,7 +1365,7 @@ function TOOL:Hud1()
 
         local dis = self.dist
 
-        if JG.stools.Data.precision_mover.WL == false then
+        if PrecisionAlign.Mover.Data.WL == false then
             for i = 1, 36 do
                 local va = Ang + Angle()
                 va:RotateAroundAxis(Ang:Forward(), 10 * i)
@@ -1425,41 +1421,41 @@ function TOOL:Hud1()
         if self.Hold then
             moverSetColor(Color(255, 255, 0, 255))
 
-            if JG.stools.Data.precision_mover.WL == false then
+            if PrecisionAlign.Mover.Data.WL == false then
                 local val = self:ToScreen2(Vec1 + self.lat.angdir * dis * 2)
 
                 if self.UseSnap then
                     if self.AngS == 1 then
                         moverLine(Vec2_2.x, Vec2_2.y, val.x, val.y)
-                        local val2 = (self:IntersectRayWithPlane(self.lat.pos, JG.stools.Data.precision_mover.Ent:GetForward(), owner:EyePos(), owner:EyeAngles():Forward()) - self.lat.pos)
+                        local val2 = (self:IntersectRayWithPlane(self.lat.pos, PrecisionAlign.Mover.Data.Ent:GetForward(), owner:EyePos(), owner:EyeAngles():Forward()) - self.lat.pos)
                         val = self:ToScreen2(Vec1 + val2:GetNormalized() * 2 * dis)
                         moverSetColor(Color(255, 0, 0, 255))
                         moverLine(Vec2_2.x, Vec2_2.y, val.x, val.y)
                     elseif self.AngS == 2 then
                         moverLine(Vec2_2.x, Vec2_2.y, val.x, val.y)
-                        val = self:ToScreen2(Vec1 + (self:IntersectRayWithPlane(self.lat.pos, JG.stools.Data.precision_mover.Ent:GetRight(), owner:EyePos(), owner:EyeAngles():Forward()) - self.lat.pos):GetNormalized() * 2 * dis)
+                        val = self:ToScreen2(Vec1 + (self:IntersectRayWithPlane(self.lat.pos, PrecisionAlign.Mover.Data.Ent:GetRight(), owner:EyePos(), owner:EyeAngles():Forward()) - self.lat.pos):GetNormalized() * 2 * dis)
                         moverSetColor(Color(0, 255, 0, 255))
                         moverLine(Vec2_2.x, Vec2_2.y, val.x, val.y)
                     elseif self.AngS == 3 then
                         moverLine(Vec2_2.x, Vec2_2.y, val.x, val.y)
-                        val = self:ToScreen2(Vec1 + (self:IntersectRayWithPlane(self.lat.pos, JG.stools.Data.precision_mover.Ent:GetUp(), owner:EyePos(), owner:EyeAngles():Forward()) - self.lat.pos):GetNormalized() * 2 * dis)
+                        val = self:ToScreen2(Vec1 + (self:IntersectRayWithPlane(self.lat.pos, PrecisionAlign.Mover.Data.Ent:GetUp(), owner:EyePos(), owner:EyeAngles():Forward()) - self.lat.pos):GetNormalized() * 2 * dis)
                         moverSetColor(Color(0, 0, 255, 255))
                         moverLine(Vec2_2.x, Vec2_2.y, val.x, val.y)
                     end
                 else
                     if self.AngS == 1 then
                         moverLine(Vec2_2.x, Vec2_2.y, val.x, val.y)
-                        val = self:ToScreen2(Vec1 + (self:IntersectRayWithPlane(self.lat.pos, JG.stools.Data.precision_mover.Ent:GetForward(), owner:EyePos(), owner:EyeAngles():Forward()) - self.lat.pos):GetNormalized() * 2 * dis)
+                        val = self:ToScreen2(Vec1 + (self:IntersectRayWithPlane(self.lat.pos, PrecisionAlign.Mover.Data.Ent:GetForward(), owner:EyePos(), owner:EyeAngles():Forward()) - self.lat.pos):GetNormalized() * 2 * dis)
                         moverSetColor(Color(255, 0, 0, 255))
                         moverLine(Vec2_2.x, Vec2_2.y, val.x, val.y)
                     elseif self.AngS == 2 then
                         moverLine(Vec2_2.x, Vec2_2.y, val.x, val.y)
-                        val = self:ToScreen2(Vec1 + (self:IntersectRayWithPlane(self.lat.pos, JG.stools.Data.precision_mover.Ent:GetRight(), owner:EyePos(), owner:EyeAngles():Forward()) - self.lat.pos):GetNormalized() * 2 * dis)
+                        val = self:ToScreen2(Vec1 + (self:IntersectRayWithPlane(self.lat.pos, PrecisionAlign.Mover.Data.Ent:GetRight(), owner:EyePos(), owner:EyeAngles():Forward()) - self.lat.pos):GetNormalized() * 2 * dis)
                         moverSetColor(Color(0, 255, 0, 255))
                         moverLine(Vec2_2.x, Vec2_2.y, val.x, val.y)
                     elseif self.AngS == 3 then
                         moverLine(Vec2_2.x, Vec2_2.y, val.x, val.y)
-                        val = self:ToScreen2(Vec1 + (self:IntersectRayWithPlane(self.lat.pos, JG.stools.Data.precision_mover.Ent:GetUp(), owner:EyePos(), owner:EyeAngles():Forward()) - self.lat.pos):GetNormalized() * 2 * dis)
+                        val = self:ToScreen2(Vec1 + (self:IntersectRayWithPlane(self.lat.pos, PrecisionAlign.Mover.Data.Ent:GetUp(), owner:EyePos(), owner:EyeAngles():Forward()) - self.lat.pos):GetNormalized() * 2 * dis)
                         moverSetColor(Color(0, 0, 255, 255))
                         moverLine(Vec2_2.x, Vec2_2.y, val.x, val.y)
                     end
@@ -1490,7 +1486,7 @@ function TOOL:Hud1()
                 local TAC = TEXT_ALIGN_CENTER
 
                 if self.UseSnap then
-                    local val2 = JG.stools.CP.precision_mover.DNumSlider[1]:GetValue()
+                    local val2 = PrecisionAlign.Mover.CP.DNumSlider[1]:GetValue()
                     local mon = self.amount < 0 and math.ceil(self.amount / val2) * val2 or math.floor(self.amount / val2) * val2
                     draw.SimpleText("Local Degree : " .. string.format("%.1f", mon) .. "º", font, val.x, val.y, Color(200, 0, 0, 255), TAC, TAC)
                 else
@@ -1565,9 +1561,9 @@ function TOOL:Hud1()
         self.colList.x, self.colList.y, self.colList.z = self.AngS == 1 and Color(255, 255, 0, 255) or Color(255, 0, 0, 255), self.AngS == 2 and Color(255, 255, 0, 255) or Color(0, 255, 0, 255), self.AngS == 3 and Color(255, 255, 0, 255) or Color(0, 0, 255, 255)
         local col
 
-        if JG.stools.Data.precision_mover.BasePos == NULL then
+        if PrecisionAlign.Mover.Data.BasePos == NULL then
             if self.Hold then
-                if JG.stools.Data.precision_mover.WL == false then
+                if PrecisionAlign.Mover.Data.WL == false then
                     col = Color(255, 255, 0, 255)
                     local TAC = TEXT_ALIGN_CENTER
 
@@ -1578,7 +1574,7 @@ function TOOL:Hud1()
                         moverCircle(dot[1].x, dot[1].y, 10, col)
                         draw.SimpleText("Length ( inch , m , cm) : " .. string.format("%.2f", self.Leng) .. " , " .. string.format("%.2f", self.Leng * 0.0254) .. " , " .. string.format("%.2f", self.Leng * 2.54), font, Vec2[1].x, Vec2[1].y + 30, Color(2000, 0, 0, 255), TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER)
                         col = Color(0, 255, 255, 255)
-                        local val1 = self:ToScreen2(self.lat.pos + JG.stools.Data.precision_mover.Ent:GetForward() * self.dist)
+                        local val1 = self:ToScreen2(self.lat.pos + PrecisionAlign.Mover.Data.Ent:GetForward() * self.dist)
                         moverCircle(val1.x, val1.y, 20, col)
                     elseif self.coordS == 2 then
                         moverSetColor(col)
@@ -1587,7 +1583,7 @@ function TOOL:Hud1()
                         moverCircle(dot[2].x, dot[2].y, 10, col)
                         draw.SimpleText("Length ( inch , m , cm) : " .. string.format("%.2f", self.Leng) .. " , " .. string.format("%.2f", self.Leng * 0.0254) .. " , " .. string.format("%.2f", self.Leng * 2.54), font, Vec2[2].x, Vec2[2].y + 30, Color(0, 200, 0, 255), TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER)
                         col = Color(0, 255, 255, 255)
-                        local val1 = self:ToScreen2(self.lat.pos + JG.stools.Data.precision_mover.Ent:GetRight() * self.dist)
+                        local val1 = self:ToScreen2(self.lat.pos + PrecisionAlign.Mover.Data.Ent:GetRight() * self.dist)
                         moverCircle(val1.x, val1.y, 20, col)
                     elseif self.coordS == 3 then
                         moverSetColor(col)
@@ -1596,7 +1592,7 @@ function TOOL:Hud1()
                         moverCircle(dot[3].x, dot[3].y, 10, col)
                         draw.SimpleText("Length ( inch , m , cm) : " .. string.format("%.2f", self.Leng) .. " , " .. string.format("%.2f", self.Leng * 0.0254) .. " , " .. string.format("%.2f", self.Leng * 2.54), font, Vec2[3].x, Vec2[3].y + 30, Color(0, 0, 200, 255), TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER)
                         col = Color(0, 255, 255, 255)
-                        local val1 = self:ToScreen2(self.lat.pos + JG.stools.Data.precision_mover.Ent:GetUp() * self.dist)
+                        local val1 = self:ToScreen2(self.lat.pos + PrecisionAlign.Mover.Data.Ent:GetUp() * self.dist)
                         moverCircle(val1.x, val1.y, 20, col)
                     end
                 else
@@ -1610,7 +1606,7 @@ function TOOL:Hud1()
                         moverCircle(dot[1].x, dot[1].y, 10, col)
                         draw.SimpleText("Length ( inch , m , cm) : " .. string.format("%.2f", self.Leng) .. " , " .. string.format("%.2f", self.Leng * 0.0254) .. " , " .. string.format("%.2f", self.Leng * 2.54), font, Vec2[1].x, Vec2[1].y + 30, Color(2000, 0, 0, 255), TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER)
                         col = Color(0, 255, 255, 255)
-                        local val1 = self:ToScreen2(self.lat.pos + JG.stools.Data.precision_mover.Ent:GetForward() * self.dist)
+                        local val1 = self:ToScreen2(self.lat.pos + PrecisionAlign.Mover.Data.Ent:GetForward() * self.dist)
                         moverCircle(val1.x, val1.y, 20, col)
                     elseif self.coordS == 2 then
                         moverSetColor(col)
@@ -1619,7 +1615,7 @@ function TOOL:Hud1()
                         moverCircle(dot[2].x, dot[2].y, 10, col)
                         draw.SimpleText("Length ( inch , m , cm) : " .. string.format("%.2f", self.Leng) .. " , " .. string.format("%.2f", self.Leng * 0.0254) .. " , " .. string.format("%.2f", self.Leng * 2.54), font, Vec2[2].x, Vec2[2].y + 30, Color(0, 200, 0, 255), TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER)
                         col = Color(0, 255, 255, 255)
-                        local val1 = self:ToScreen2(self.lat.pos + JG.stools.Data.precision_mover.Ent:GetRight() * self.dist)
+                        local val1 = self:ToScreen2(self.lat.pos + PrecisionAlign.Mover.Data.Ent:GetRight() * self.dist)
                         moverCircle(val1.x, val1.y, 20, col)
                     elseif self.coordS == 3 then
                         moverSetColor(col)
@@ -1628,13 +1624,13 @@ function TOOL:Hud1()
                         moverCircle(dot[3].x, dot[3].y, 10, col)
                         draw.SimpleText("Length ( inch , m , cm) : " .. string.format("%.2f", self.Leng) .. " , " .. string.format("%.2f", self.Leng * 0.0254) .. " , " .. string.format("%.2f", self.Leng * 2.54), font, Vec2[3].x, Vec2[3].y + 30, Color(0, 0, 200, 255), TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER)
                         col = Color(0, 255, 255, 255)
-                        local val1 = self:ToScreen2(self.lat.pos + JG.stools.Data.precision_mover.Ent:GetUp() * self.dist)
+                        local val1 = self:ToScreen2(self.lat.pos + PrecisionAlign.Mover.Data.Ent:GetUp() * self.dist)
                         moverCircle(val1.x, val1.y, 20, col)
                     end
                 end
                 --draw.SimpleText("" , Color(0 ,0,200,255) , TEXT_ALIGN_CENTER,TEXT_ALIGN_CENTER)
             else
-                if JG.stools.Data.precision_mover.WL == false then
+                if PrecisionAlign.Mover.Data.WL == false then
                     local TAC = TEXT_ALIGN_CENTER
                     moverSetColor(self.coordS == 1 and Color(255, 255, 0, 255) or Color(255, 0, 0, 255))
                     moverLine(Vec2_2.x, Vec2_2.y, Vec2[1].x, Vec2[1].y)
@@ -1672,11 +1668,11 @@ function TOOL:Hud1()
             end
 
             local TAC = TEXT_ALIGN_CENTER
-            draw.SimpleText(tostring(JG.stools.Data.precision_mover.Ent:GetAngles()), "ChatFont", Vec2_2.x, Vec2_2.y, Color(255, 0, 255, 255), TAC, TAC)
+            draw.SimpleText(tostring(PrecisionAlign.Mover.Data.Ent:GetAngles()), "ChatFont", Vec2_2.x, Vec2_2.y, Color(255, 0, 255, 255), TAC, TAC)
         end
     end
 
-    self.Lat = JG.stools.Data.precision_mover.Ent
+    self.Lat = PrecisionAlign.Mover.Data.Ent
 end
 
 TOOL.ratio = 0
@@ -1714,7 +1710,7 @@ function TOOL:DrawToolScreen( width, height )
 end
 
 function TOOL:DrawHUD()
-    if JG.stools.loadedP.precision_mover == false then return end
+    if PrecisionAlign.Mover.Loaded == false then return end
     self:Hud1()
     self:Hud2()
 end
