@@ -5,14 +5,28 @@ end
 
 local PA = PrecisionAlign.PA
 function PrecisionAlign.SelectNextPoint()
-    if PrecisionAlign.SelectedPoint < PrecisionAlign.MAX_CONSTRUCTS and PrecisionAlign.Functions.construct_exists( PrecisionAlign.CONSTRUCT_POINT, PrecisionAlign.SelectedPoint ) then
-        PrecisionAlign.SelectedPoint = PrecisionAlign.SelectedPoint + 1
-        local dlist_points = controlpanel.Get( PA ).point_window.list_primarypoint
-        dlist_points:ClearSelection()
-        dlist_points:SelectItem( dlist_points:GetLine(PrecisionAlign.SelectedPoint) )
-        return true
+    if not PrecisionAlign.Functions.construct_exists( PrecisionAlign.CONSTRUCT_POINT, PrecisionAlign.SelectedPoint ) then
+        return false
     end
-    return false
+
+    -- Scan forward for the first unoccupied slot so we don't clobber an existing point
+    local NextPoint = nil
+    for i = PrecisionAlign.SelectedPoint + 1, PrecisionAlign.MAX_CONSTRUCTS do
+        if not PrecisionAlign.Functions.construct_exists( PrecisionAlign.CONSTRUCT_POINT, i ) then
+            NextPoint = i
+            break
+        end
+    end
+
+    if not NextPoint then
+        return false
+    end
+
+    PrecisionAlign.SelectedPoint = NextPoint
+    local dlist_points = controlpanel.Get( PA ).point_window.list_primarypoint
+    dlist_points:ClearSelection()
+    dlist_points:SelectItem( dlist_points:GetLine(PrecisionAlign.SelectedPoint) )
+    return true
 end
 
 function PrecisionAlign.PointToolMode:OnClick(Entity, Point, _, Shift, Alt)
