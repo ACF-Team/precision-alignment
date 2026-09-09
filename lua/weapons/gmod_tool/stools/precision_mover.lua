@@ -112,12 +112,19 @@ function TOOL:LeftClick(trace)
             PrecisionAlign.Mover.CP.DLabel[1]:SetText(construct:GetLabel())
             PrecisionAlign.Mover.CP.DLabel[1]:SizeToContents()
         else
-            PrecisionAlign.Mover.Data.Ent = trace.Entity:IsValid() and not trace.Entity:IsNPC() and not trace.Entity:IsPlayer() and not trace.Entity:IsWorld() and trace.Entity or NULL
+            PrecisionAlign.Mover.Data.Ent = IsValid(trace.Entity) and not trace.Entity:IsNPC() and not trace.Entity:IsPlayer() and not trace.Entity:IsWorld() and trace.Entity or NULL
 
-            if PrecisionAlign.Mover.Data.Ent ~= NULL then
-                PrecisionAlign.Mover.CP.DAdjustableModelPanel[1]:SetModel(PrecisionAlign.Mover.Data.Ent:GetModel())
-                PrecisionAlign.Mover.CP.DLabel[1]:SetText(PrecisionAlign.Mover.Data.Ent:GetModel())
-                PrecisionAlign.Mover.CP.DLabel[1]:SizeToContents()
+            if IsValid(PrecisionAlign.Mover.Data.Ent) then
+                -- why the hell was this coded this way...
+                if IsValid(PrecisionAlign.Mover.CP.DAdjustableModelPanel[1]) then
+                    PrecisionAlign.Mover.CP.DAdjustableModelPanel[1]:SetModel(PrecisionAlign.Mover.Data.Ent:GetModel())
+                end
+
+                if IsValid(PrecisionAlign.Mover.CP.DLabel[1]) then
+                    PrecisionAlign.Mover.CP.DLabel[1]:SetText(PrecisionAlign.Mover.Data.Ent:GetModel())
+                    PrecisionAlign.Mover.CP.DLabel[1]:SizeToContents()
+                end
+
                 PrecisionAlign.Mover.Data.Ent:SetRenderMode(1)
             end
         end
