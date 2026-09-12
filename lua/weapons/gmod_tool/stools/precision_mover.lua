@@ -86,8 +86,6 @@ local IsConstructProxy, PickConstruct
 function TOOL:LeftClick(trace)
     local owner = self:GetOwner()
 
-    if not isSingleplayer and CPPI and not trace.Entity:CPPICanTool(owner, "prop_mover") then return false end
-
     if SERVER then
         if isSingleplayer then
             net.Start(self.Name .. "_LeftClick")
@@ -458,7 +456,7 @@ function PickConstruct()
     return nil
 end
 
-function TOOL:RightClick(trace)
+function TOOL:RightClick()
     if SERVER then
         if isSingleplayer then
             net.Start(self.Name .. "_RightClick")
