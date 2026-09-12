@@ -456,7 +456,7 @@ function PickConstruct()
     return nil
 end
 
-function TOOL:RightClick(trace)
+function TOOL:RightClick()
     if SERVER then
         if isSingleplayer then
             net.Start(self.Name .. "_RightClick")
