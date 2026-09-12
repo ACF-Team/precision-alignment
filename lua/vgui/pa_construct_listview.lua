@@ -24,6 +24,37 @@ function CONSTRUCT_LISTVIEW:Text( title, construct )
 	Header:SetContentAlignment( 5 )
 end
 
+local function firstValidNumber(s)
+	for token in s:gmatch("%S+") do
+		local num = tonumber(token)
+		if num ~= nil then
+			return num
+		end
+	end
+	return nil
+end
+
+function CONSTRUCT_LISTVIEW:SortByColumn(ColumnID, Desc)
+	table.sort(self.Sorted, function(a, b)
+		if Desc then
+			a, b = b, a
+		end
+
+		local aval = a:GetSortValue(ColumnID) or a:GetColumnText(ColumnID)
+		local bval = b:GetSortValue(ColumnID) or b:GetColumnText(ColumnID)
+
+		local anum = firstValidNumber(aval)
+		local bnum = firstValidNumber(bval)
+
+		if anum and bnum then return anum < bnum end
+
+		return tostring(aval) < tostring(bval)
+	end)
+
+	self:SetDirty(true)
+	self:InvalidateLayout()
+end
+
 function CONSTRUCT_LISTVIEW:SetIndicators()
 	for i = 1, PrecisionAlign.MAX_CONSTRUCTS do
 		local line = self:GetLine(i)
