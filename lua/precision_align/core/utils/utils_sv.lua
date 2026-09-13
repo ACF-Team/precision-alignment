@@ -269,6 +269,13 @@ list.Set( "PA_mirror_exceptions", "models/xqm/wing", Angle(0, 0, 180) )
 list.Set( "PA_mirror_exceptions", "models/xeon133/racewheel/", Angle(0, 0, 180) )
 list.Set( "PA_mirror_exceptions", "models/xeon133/racewheelskinny/", Angle(0, 0, 180) )
 
+list.Set( "PA_mirror_exceptions", "models/acf/core/c_seated_l.mdl", Angle(0, 0, 180) )
+list.Set( "PA_mirror_exceptions", "models/acf/core/c_seated_m.mdl", Angle(0, 0, 180) )
+list.Set( "PA_mirror_exceptions", "models/acf/core/c_seated_s.mdl", Angle(0, 0, 180) )
+list.Set( "PA_mirror_exceptions", "models/acf/core/c_standing_l.mdl", Angle(0, 0, 180) )
+list.Set( "PA_mirror_exceptions", "models/acf/core/c_standing_m.mdl", Angle(0, 0, 180) )
+list.Set( "PA_mirror_exceptions", "models/acf/core/c_standing_s.mdl", Angle(0, 0, 180) )
+
 --********************************************************************************************************************--
 -- Duplicate ents
 --********************************************************************************************************************--
@@ -687,8 +694,7 @@ local function precision_align_mirror_func( ply, _, args )
 
 	local pos = ent:GetPos()
 	local ang = ent:GetAngles()
-	-- Mass centre seems to be most reliable way of finding a point on the plane of symmetry
-	local v = ent:LocalToWorld(ent:GetPhysicsObject():GetMassCenter())
+	local v = pos
 
 	-- Stack before mirroring
 	-- local ent2
