@@ -30,6 +30,7 @@ end
 
 local stackCvar = CreateClientConVar(PA_ .. "stack_num", "1", true, false, "", 1, 20)
 local lengthCvar = CreateClientConVar(PA_ .. "default_linelength", "200", true, false, "", 0.001)
+CreateClientConVar(PA_ .. "shiftclick_overwrite", "0", true, false, "If enabled, shift-clicking with the point tool overwrites the selected point instead of advancing to the next unoccupied one", 0, 1)
 
 --********************************************************************************************************************--
 -- Global  Functions

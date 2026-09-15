@@ -9,12 +9,19 @@ function PrecisionAlign.SelectNextPoint()
         return false
     end
 
-    -- Scan forward for the first unoccupied slot so we don't clobber an existing point
     local NextPoint = nil
-    for i = PrecisionAlign.SelectedPoint + 1, PrecisionAlign.MAX_CONSTRUCTS do
-        if not PrecisionAlign.Functions.construct_exists( PrecisionAlign.CONSTRUCT_POINT, i ) then
-            NextPoint = i
-            break
+    if GetConVar(PrecisionAlign.PA_ .. "shiftclick_overwrite"):GetBool() then
+        -- Old behavior: always advance by one slot, regardless of occupancy
+        if PrecisionAlign.SelectedPoint < PrecisionAlign.MAX_CONSTRUCTS then
+            NextPoint = PrecisionAlign.SelectedPoint + 1
+        end
+    else
+        -- Scan forward for the first unoccupied slot so we don't clobber an existing point
+        for i = PrecisionAlign.SelectedPoint + 1, PrecisionAlign.MAX_CONSTRUCTS do
+            if not PrecisionAlign.Functions.construct_exists( PrecisionAlign.CONSTRUCT_POINT, i ) then
+                NextPoint = i
+                break
+            end
         end
     end
 
