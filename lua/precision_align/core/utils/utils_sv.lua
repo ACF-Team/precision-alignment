@@ -303,9 +303,47 @@ local function Queue_Process()
 	local ply = ent_table.ply
 	if not IsValid( ply ) then return false end
 
+	local data = ent_table.data
+	local class = data.Class
+
+	-- Classes with a registered duplicator factory enforce limits themselves,
+	-- anything else goes through GenericDuplicatorFunction which does not
+	local generic = not duplicator.FindEntityClass( class )
+
+	if generic then
+		local allowed
+
+		if class == "prop_effect" then
+			allowed = hook.Run( "PlayerSpawnEffect", ply, data.Model )
+		elseif list.Get( "Weapon" )[class] then
+			allowed = hook.Run( "PlayerSpawnSWEP", ply, class, list.Get( "Weapon" )[class] )
+		else
+			allowed = hook.Run( "PlayerSpawnSENT", ply, class )
+		end
+
+		if allowed == false then
+			-- Drop the rest of this player's queued stack entries
+			for i = #stack_queue, 1, -1 do
+				if stack_queue[i].ply == ply then table.remove( stack_queue, i ) end
+			end
+
+			return false
+		end
+	end
+
 	-- Stack entity
-	local ent = duplicator.CreateEntityFromTable( ply, ent_table.data )
+	local ent = duplicator.CreateEntityFromTable( ply, data )
 	if not IsValid( ent ) then return false end
+
+	if generic then
+		if class == "prop_effect" then
+			hook.Run( "PlayerSpawnedEffect", ply, ent:GetModel(), ent )
+		elseif ent:IsWeapon() then
+			hook.Run( "PlayerSpawnedSWEP", ply, ent )
+		else
+			hook.Run( "PlayerSpawnedSENT", ply, ent )
+		end
+	end
 
 	local stackID = ent_table.stackID
 
