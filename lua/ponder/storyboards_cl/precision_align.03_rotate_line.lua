@@ -1,0 +1,70 @@
+local sb = Ponder.API.NewStoryboard("precision_align", "tutorials", "rotate-around-line")
+sb:WithMenuName("Lines and rotating")
+sb:WithPlaybackName("Lines and rotating")
+sb:WithModelIcon("models/hunter/plates/plate1x2.mdl")
+sb:WithDescription("Define a line and rotate a prop around it.")
+sb:SetPrimaryLanguage("en")
+sb:WithIndexOrder(1) -- Ponder lists the highest first
+
+local Half, ToolPos = 23.725, Vector(90, -90, 90)
+local PostPos, PlatePos = Vector(0, 0, 40), Vector(0, 47.45, 40 + Half + 1.5)
+local LineStart = PostPos + Vector(0, 0, Half)
+local LineEnd = LineStart + Vector(0, 0, 90)
+
+local Turn = {Target = "plate", Pivot = LineStart, Axis = LineEnd - LineStart, Degrees = 90, Length = 1}
+
+---------------------------------------------
+-- Defining a line
+---------------------------------------------
+local c = sb:Chapter("Defining a line")
+c:AddInstruction("MoveCameraLookAt", {Target = Vector(0, 20, 70), Distance = 1400, Angle = 55, Height = 500, Length = 0.6})
+c:AddInstruction("PlaceModel", {Name = "post", Model = "models/hunter/blocks/cube1x1x1.mdl", Position = PostPos, Length = 0})
+c:AddInstruction("ColorModel", {Target = "post", Color = Color(230, 170, 60), Length = 0})
+c:AddInstruction("PlaceModel", {Name = "plate", Model = "models/hunter/plates/plate1x2.mdl", Position = PlatePos, Length = 0})
+c:AddInstruction("ColorModel", {Target = "plate", Color = Color(120, 160, 220), Length = 0})
+c:AddInstruction("ShowToolgun", {Tool = "precision_align", Position = ToolPos, Length = 0.375})
+c:AddInstruction("Caption", {Text = "A line has a start and an end. It can be an axis to rotate props around. Here the blue plate will swing around the orange post.", FadeInOutTime = 0.225, TextLength = 5})
+c:AddDelay(5.5)
+c:AddInstruction("PAToolMenu", {Name = "menu", Mode = "Line - Hitpos + Hitnormal"})
+c:AddDelay(0.5)
+c:AddInstruction("Caption", {Text = "With Line - Hitpos + Hitnormal, left click a surface. The line starts at the hit and points away from the surface.", FadeInOutTime = 0.225, TextLength = 5})
+c:AddDelay(1)
+c:AddInstruction("PAClick", {Button = "Left Click", Position = LineStart})
+c:AddInstruction("PALine", {Name = "axis", Start = LineStart, End = LineEnd, Label = "1"})
+c:AddDelay(4)
+
+---------------------------------------------
+-- Rotating the prop
+---------------------------------------------
+c = sb:Chapter("Rotating the prop")
+c:AddInstruction("RemovePanel", {Name = "menu", Length = 0.3})
+c:AddInstruction("Caption", {Text = "Right click the prop you want to rotate to select it.", FadeInOutTime = 0.225, TextLength = 3})
+c:AddDelay(0.75)
+c:AddInstruction("PAClick", {Button = "Right Click", Position = PlatePos})
+c:AddInstruction("ColorModel", {Target = "plate", Color = Color(150, 200, 255), Length = 0.3})
+c:AddDelay(2.5)
+c:AddInstruction("Caption", {Text = "Press Reload to open the manipulation panel.", FadeInOutTime = 0.225, TextLength = 3})
+c:AddDelay(c:AddInstruction("KeyPress", {Name = "reload", Key = "R", Position = Vector(0.5, 0.27, 0)}).PressedAt)
+c:AddInstruction("PAManipulationPanel", {Name = "manip", Tab = "rotation_tab"})
+c:AddDelay(3.5)
+c:AddInstruction("Caption", {Text = "On the Rotation tab, pick the line as the axis and set the angle to 90.", FadeInOutTime = 0.225, TextLength = 4})
+c:AddDelay(1)
+c:AddInstruction("PAMenuSelect", {Name = "manip", Within = "rotation_tab", List = "list_line_axis", Line = 1})
+c:AddDelay(1.2)
+c:AddInstruction("PAMenuValue", {Name = "manip", Within = "rotation_tab", Field = "slider_axisangle", Value = 90})
+c:AddDelay(2.8)
+c:AddInstruction("PAMenuEnable", {Name = "manip", Within = "rotation_tab", Field = "button_axisrotate_entity"})
+c:AddInstruction("Caption", {Text = "Press Rotate Entity to swing the prop around the line.", FadeInOutTime = 0.225, TextLength = 3.5})
+c:AddDelay(1)
+c:AddDelay(c:AddInstruction("PAMenuPress", {Name = "manip", Within = "rotation_tab", Field = "button_axisrotate_entity", Length = 1.2}).Length)
+c:AddInstruction("RemovePanel", {Name = "manip", Length = 0.3})
+c:AddDelay(0.4)
+c:AddInstruction("PARotateModel", Turn)
+c:AddDelay(3)
+c:AddInstruction("Caption", {Text = "Shift and right click the prop to repeat the rotation.", FadeInOutTime = 0.225, TextLength = 3.5})
+c:AddDelay(1)
+c:AddInstruction("PAClick", {Button = "Right Click", Position = Vector(-PlatePos.y, PlatePos.x, PlatePos.z), Held = {"Shift"}}) -- The plate has swung a quarter turn
+c:AddInstruction("PARotateModel", Turn)
+c:AddDelay(3)
+c:AddInstruction("HideToolgun", {Length = 0.375})
+c:AddDelay(0.375)
