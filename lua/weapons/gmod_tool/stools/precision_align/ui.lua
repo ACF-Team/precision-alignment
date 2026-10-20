@@ -366,6 +366,22 @@ hook.Add( "OnTextEntryLoseFocus", "PAKeyboardFocusOff", TextFocusOff )
 do
     CPanel:Clear()
 
+    local HasPonder = Ponder ~= nil
+    local Tutorials = CPanel:Button(HasPonder and "Open Tutorials" or "Tutorials need Ponder (click to get it)")
+    Tutorials:SetTooltip("Step by step tutorials on how to use this tool")
+
+    function Tutorials:DoClick()
+        if not HasPonder then return gui.OpenURL("https://steamcommunity.com/sharedfiles/filedetails/?id=3404950276") end
+
+        if not IsValid(Ponder.UIWindow) then
+            Ponder.UIWindow = vgui.Create("Ponder.UI")
+        else
+            Ponder.UIWindow:PonderShow()
+        end
+
+        Ponder.UIWindow:LoadAddonCategoriesIndex("precision_align", "tutorials")
+    end
+
     local ToolList = vgui.Create "PA_CPanel_tool_list"
     CPanel:AddItem(ToolList)
     CPanel.ToolList = ToolList
