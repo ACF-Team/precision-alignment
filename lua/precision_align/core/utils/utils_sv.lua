@@ -714,6 +714,74 @@ concommand.Add( PA_ .. "rotate", precision_align_rotate_func )
 -- This was converted to a server-side command since it involves both rotation + translation in one step, and massCenter isn't available on client
 -- The mirror exception table can be changed on the server if needed for debugging/updating
 
+-- Convex hulls keep their angle, the points get mirrored instead
+local function get_hull_points( ent )
+	local points = {}
+
+	for i = 1, 10 do
+		points[i] = Vector( ent[ "GetPrimPX" .. i ]( ent ), ent[ "GetPrimPY" .. i ]( ent ), ent[ "GetPrimPZ" .. i ]( ent ) )
+	end
+
+	return points
+end
+
+local function set_hull_points( ent, points )
+	for i = 1, #points do
+		local p = points[i]
+
+		ent[ "SetPrimPX" .. i ]( ent, p.x )
+		ent[ "SetPrimPY" .. i ]( ent, p.y )
+		ent[ "SetPrimPZ" .. i ]( ent, p.z )
+	end
+end
+
+local function get_hull_clips( ent )
+	if ImprovedClipping and ent.ImprovedClipping then
+		return ImprovedClipping.GetClips( ent )
+	end
+end
+
+-- Mirrors about a plane through the entity's origin, the position gets mirrored separately
+local function mirror_hull( ent, normal )
+	local n = WorldToLocal( normal:GetNormalized(), angle_zero, vector_origin, ent:GetAngles() )
+
+	-- Points are rotated by the mesh rotate and then offset, so do this in that space
+	local meshang = ent:GetPrimMESHROT()
+	local meshn = WorldToLocal( n, angle_zero, vector_origin, meshang )
+	local offset = WorldToLocal( ent:GetPrimMESHPOS(), angle_zero, vector_origin, meshang )
+
+	local points = get_hull_points( ent )
+
+	for i = 1, #points do
+		local p = points[i]
+		points[i] = p - meshn * ( meshn:Dot( p + offset ) * 2 )
+	end
+
+	set_hull_points( ent, points )
+
+	-- Clips are entity local, only the normal needs flipping
+	local clips = get_hull_clips( ent )
+
+	if clips then
+		for _, clip in ipairs( clips ) do
+			clip.Normal = clip.Normal - n * ( n:Dot( clip.Normal ) * 2 )
+		end
+
+		ImprovedClipping.SetClips( ent, clips )
+	end
+end
+
+local function UndoHullMirror( _, ent, pos, ang, points, clips )
+	if not IsValid( ent ) then return end
+
+	UndoMove( nil, ent, pos, ang )
+	set_hull_points( ent, points )
+
+	if clips then
+		ImprovedClipping.SetClips( ent, clips )
+	end
+end
+
 -- Args list:
 -- 1,2,3 = Plane Origin Vector
 -- 4,5,6 = Plane Normal Vector
@@ -740,48 +808,58 @@ local function precision_align_mirror_func( ply, _, args )
 		Queue_Add( ply, ent )
 	end
 
+	local hull = ent:GetClass() == "primitive_convex_hull"
+
 	local model = ent:GetModel() or ""
 	undo.Create("PA Mirror (" .. model .. ")")
 		undo.SetPlayer( ply )
-		undo.AddFunction( UndoMove, ent, pos, ang )
+		if hull then
+			undo.AddFunction( UndoHullMirror, ent, pos, ang, get_hull_points( ent ), get_hull_clips( ent ) )
+		else
+			undo.AddFunction( UndoMove, ent, pos, ang )
+		end
 	undo.Finish()
 
-	-- Mirror angle
-	-- Filter through exceptions for ents that need to be rotated differently
-	local exceptionang
-	model = string.lower( ent:GetModel() )
-	local PA_mirror_exceptions_specific = list.Get( "PA_mirror_exceptions_specific" )
+	if hull then
+		mirror_hull( ent, normal )
+	else
+		-- Mirror angle
+		-- Filter through exceptions for ents that need to be rotated differently
+		local exceptionang
+		model = string.lower( ent:GetModel() )
+		local PA_mirror_exceptions_specific = list.Get( "PA_mirror_exceptions_specific" )
 
-	-- Match entire string
-	exceptionang = PA_mirror_exceptions_specific[model]
+		-- Match entire string
+		exceptionang = PA_mirror_exceptions_specific[model]
 
-	-- Match left part of string
-	if not exceptionang then
-		local PA_mirror_exceptions = list.Get( "PA_mirror_exceptions" )
-		for k, a in pairs( PA_mirror_exceptions ) do
-			if string.match( model, "^" .. k ) then
-				exceptionang = a
-				break
+		-- Match left part of string
+		if not exceptionang then
+			local PA_mirror_exceptions = list.Get( "PA_mirror_exceptions" )
+			for k, a in pairs( PA_mirror_exceptions ) do
+				if string.match( model, "^" .. k ) then
+					exceptionang = a
+					break
+				end
 			end
 		end
-	end
 
-	if exceptionang then
-		ang = ent:LocalToWorldAngles( exceptionang )
-	else
-		ang = ent:LocalToWorldAngles( Angle(180, 0, 0) )
-	end
+		if exceptionang then
+			ang = ent:LocalToWorldAngles( exceptionang )
+		else
+			ang = ent:LocalToWorldAngles( Angle(180, 0, 0) )
+		end
 
-	ang:RotateAroundAxis( normal, 180 )
+		ang:RotateAroundAxis( normal, 180 )
 
-	-- Rotate around v, same method as rotation function
-	local localv
-	if v == pos then
-		ent:SetAngles(ang)
-	else
-		localv = ent:WorldToLocal(v)
-		ent:SetAngles(ang)
-		pos = pos + ( v - ent:LocalToWorld(localv) )
+		-- Rotate around v, same method as rotation function
+		local localv
+		if v == pos then
+			ent:SetAngles(ang)
+		else
+			localv = ent:WorldToLocal(v)
+			ent:SetAngles(ang)
+			pos = pos + ( v - ent:LocalToWorld(localv) )
+		end
 	end
 
 	-- Mirror position

@@ -2936,7 +2936,8 @@ function ROTATION_FUNCTIONS_TAB:Init()
 		self.button_mirror:SetPos(695 * scale, 280)
 		self.button_mirror:SetText( "Mirror Across Plane" )
 		self.button_mirror.description = "This will move and rotate the selected entity so that it will be mirrored about the selected plane, rotating about the prop's centre of mass\n\n" ..
-										 "Note that some props have different planes of symmetry - this can usually be remedied by rotating the prop in some direction by 90 or 180 degrees relative to itself about its centre of mass"
+										 "Note that some props have different planes of symmetry - this can usually be remedied by rotating the prop in some direction by 90 or 180 degrees relative to itself about its centre of mass\n\n" ..
+										 "Convex hulls are not rotated, instead their points are mirrored across the plane"
 		self.button_mirror.selections = { 0, 0, 1, 0 }
 		self.button_mirror.options = { 0, 0 }
 		self.button_mirror.func = function( _, _, selections )
