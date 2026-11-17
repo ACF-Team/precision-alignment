@@ -83,6 +83,17 @@ local isSingleplayer = game.SinglePlayer()
 -- Forward declarations; defined further down alongside the PA construct helpers.
 local IsConstructProxy, PickConstruct
 
+-- Returns the first control panel widget of the given kind, or nil if the
+-- tool's control panel has not been built yet (the UI build in Think can
+-- defer while the spawn menu is hidden).
+local function getCPWidget(kind)
+    local cp = PrecisionAlign and PrecisionAlign.Mover and PrecisionAlign.Mover.CP
+    local list = cp and cp[kind]
+    local widget = list and list[1]
+
+    return IsValid(widget) and widget or nil
+end
+
 function TOOL:LeftClick(trace)
     local owner = self:GetOwner()
 
@@ -107,20 +118,24 @@ function TOOL:LeftClick(trace)
 
         if construct then
             PrecisionAlign.Mover.Data.Ent = construct
-            PrecisionAlign.Mover.CP.DLabel[1]:SetText(construct:GetLabel())
-            PrecisionAlign.Mover.CP.DLabel[1]:SizeToContents()
+            local label = getCPWidget("DLabel")
+            if label then
+                label:SetText(construct:GetLabel())
+                label:SizeToContents()
+            end
         else
             PrecisionAlign.Mover.Data.Ent = IsValid(trace.Entity) and not trace.Entity:IsNPC() and not trace.Entity:IsPlayer() and not trace.Entity:IsWorld() and trace.Entity or NULL
 
             if IsValid(PrecisionAlign.Mover.Data.Ent) then
-                -- why the hell was this coded this way...
-                if IsValid(PrecisionAlign.Mover.CP.DAdjustableModelPanel[1]) then
-                    PrecisionAlign.Mover.CP.DAdjustableModelPanel[1]:SetModel(PrecisionAlign.Mover.Data.Ent:GetModel())
+                local modelpanel = getCPWidget("DAdjustableModelPanel")
+                if modelpanel then
+                    modelpanel:SetModel(PrecisionAlign.Mover.Data.Ent:GetModel())
                 end
 
-                if IsValid(PrecisionAlign.Mover.CP.DLabel[1]) then
-                    PrecisionAlign.Mover.CP.DLabel[1]:SetText(PrecisionAlign.Mover.Data.Ent:GetModel())
-                    PrecisionAlign.Mover.CP.DLabel[1]:SizeToContents()
+                local label = getCPWidget("DLabel")
+                if label then
+                    label:SetText(PrecisionAlign.Mover.Data.Ent:GetModel())
+                    label:SizeToContents()
                 end
 
                 PrecisionAlign.Mover.Data.Ent:SetRenderMode(1)
@@ -1221,8 +1236,16 @@ function TOOL:Reload()
     self.AABB = {}
     PrecisionAlign.Mover.Data.Ent = NULL
     PrecisionAlign.Mover.Data.BasePos = NULL
-    PrecisionAlign.Mover.CP.DAdjustableModelPanel[1]:SetModel("models/props_borealis/bluebarrel001.mdl")
-    PrecisionAlign.Mover.CP.DLabel[1]:SetText("Default")
+
+    local modelpanel = getCPWidget("DAdjustableModelPanel")
+    if modelpanel then
+        modelpanel:SetModel("models/props_borealis/bluebarrel001.mdl")
+    end
+
+    local label = getCPWidget("DLabel")
+    if label then
+        label:SetText("Default")
+    end
 
     return true
 end
