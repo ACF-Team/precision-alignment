@@ -1091,28 +1091,45 @@ function TOOL:Think()
 end
 
 if SERVER then
-    util.AddNetworkString("PrecisionMover_MoveP")
-    util.AddNetworkString("PrecisionMover_MoveA")
     util.AddNetworkString("PrecisionMover_Move")
 
-    net.Receive("PrecisionMover_MoveP", function()
-        local _, _, _, EntInd, Vec = net.ReadInt(3), net.ReadInt(3), net.ReadInt(1), net.ReadInt(12), Vector(net.ReadFloat(), net.ReadFloat(), net.ReadFloat())
-        local ent = ents.GetByIndex(EntInd)
-        ent:SetPos(Vec)
-        local phys = ent:GetPhysicsObject()
+    -- Same checks the toolgun does before LeftClick/RightClick
+    local function canMove(ply, ent)
+        if not IsValid(ply) or not IsValid(ent) then return false end
+        if ent:IsPlayer() or ent:IsNPC() then return false end
 
-        if phys:IsValid() then
-            phys:EnableMotion(false)
-        end
-    end)
+        local wep = ply:GetActiveWeapon()
+        if not IsValid(wep) or wep:GetClass() ~= "gmod_tool" or wep:GetMode() ~= "precision_mover" then return false end
+
+        local tool = wep:GetToolObject()
+        if not tool or not tool:Allowed() then return false end
+
+        local start = ply:GetShootPos()
+        local hitPos = ent:GetPos()
+
+        local trace = {
+            Entity = ent,
+            Hit = true,
+            HitNonWorld = true,
+            HitPos = hitPos,
+            HitNormal = (start - hitPos):GetNormalized(),
+            StartPos = start,
+            Normal = (hitPos - start):GetNormalized(),
+            PhysicsBone = 0
+        }
+
+        return hook.Run("CanTool", ply, trace, "precision_mover", tool, 2) and true or false
+    end
 
     net.Receive("PrecisionMover_Move", function(_, ply)
-        local _, _, Copy, EntInd, Vec = net.ReadInt(3), net.ReadInt(3), net.ReadInt(2), net.ReadInt(12), net.ReadVector()
-        local ang = net.ReadAngle()
         local ent = ents.GetByIndex(EntInd)
+        local _, _, Copy = net.ReadInt(3), net.ReadInt(3), net.ReadInt(2)
+        local Vec, ang = net.ReadVector(), net.ReadAngle()
         local pos1, ang1 = net.ReadVector(), net.ReadAngle()
 
-        if ent:IsValid() then
+        if not canMove(ply, ent) then return end
+
+        do
             if math.abs(Vec.x) > 30000 or math.abs(Vec.y) > 30000 or math.abs(Vec.z) > 30000 then
                 Vec.x = math.Clamp(Vec.x, -30000, 30000)
                 Vec.y = math.Clamp(Vec.y, -30000, 30000)
@@ -1191,18 +1208,6 @@ if SERVER then
                 undo.AddEntity(cop)
                 undo.Finish()
             end
-        else
-            return
-        end
-    end)
-
-    net.Receive("PrecisionMover_MoveA", function()
-        local ent, ang = ents.GetByIndex(net.ReadInt(12)), Angle(net.ReadFloat(), net.ReadFloat(), net.ReadFloat())
-        local phys = ent:GetPhysicsObject()
-        ent:SetAngles(ang)
-
-        if phys:IsValid() then
-            phys:EnableMotion(false)
         end
     end)
 end
