@@ -768,7 +768,7 @@ function TOOL:Think()
             net.WriteInt(self.coordS, 3)
             net.WriteInt(self.AngS, 3)
             net.WriteInt(PrecisionAlign.Mover.Data.Copy == true and 1 or 0, 2)
-            net.WriteInt(PrecisionAlign.Mover.Data.Ent:EntIndex(), 12)
+            net.WriteEntity(PrecisionAlign.Mover.Data.Ent)
             net.WriteVector(self.lat.lopos)
             net.WriteAngle(self.lat.loang)
             net.WriteVector(self.lat.pos1)
@@ -1122,8 +1122,8 @@ if SERVER then
     end
 
     net.Receive("PrecisionMover_Move", function(_, ply)
-        local ent = ents.GetByIndex(EntInd)
         local _, _, Copy = net.ReadInt(3), net.ReadInt(3), net.ReadInt(2)
+        local ent = net.ReadEntity()
         local Vec, ang = net.ReadVector(), net.ReadAngle()
         local pos1, ang1 = net.ReadVector(), net.ReadAngle()
 
