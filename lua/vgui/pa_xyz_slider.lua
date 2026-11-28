@@ -1,11 +1,10 @@
-local MIN_BOUNDS = MIN_COORD_FLOAT or -50000
-local MAX_BOUNDS = MAX_COORD_FLOAT or 50000
+local MAX_TRACE_LENGTH = 1.732050807569 * 2 * (MAX_COORD_FLOAT or math.pow(2, 14))
 
 local XYZ_SLIDER = {}
 function XYZ_SLIDER:Init()
 	--self:SetSize(130, 100) -- Keep the second number at 100
 	--self:SetWide(200)
-	self:SetMinMax( MIN_BOUNDS, MAX_BOUNDS )
+	self:SetMinMax( -MAX_TRACE_LENGTH, MAX_TRACE_LENGTH )
 	self:SetDecimals( 3 )
 	self:SetValue( 0 )
 

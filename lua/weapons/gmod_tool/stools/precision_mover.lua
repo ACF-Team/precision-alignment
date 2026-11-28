@@ -1093,8 +1093,7 @@ end
 if SERVER then
     util.AddNetworkString("PrecisionMover_Move")
 
-    local MIN_BOUNDS = MIN_COORD_FLOAT or -30000
-    local MAX_BOUNDS = MAX_COORD_FLOAT or 30000
+    local MAX_TRACE_LENGTH = 1.732050807569 * 2 * (MAX_COORD_FLOAT or math.pow(2, 14))
 
     -- Same checks the toolgun does before LeftClick/RightClick
     local function canMove(ply, ent)
@@ -1133,10 +1132,10 @@ if SERVER then
         if not canMove(ply, ent) then return end
 
         do
-            if math.abs(Vec.x) > MAX_BOUNDS or math.abs(Vec.y) > MAX_BOUNDS or math.abs(Vec.z) > MAX_BOUNDS then
-                Vec.x = math.Clamp(Vec.x, MIN_BOUNDS, MAX_BOUNDS)
-                Vec.y = math.Clamp(Vec.y, MIN_BOUNDS, MAX_BOUNDS)
-                Vec.z = math.Clamp(Vec.z, MIN_BOUNDS, MAX_BOUNDS)
+            if math.abs(Vec.x) > MAX_TRACE_LENGTH or math.abs(Vec.y) > MAX_TRACE_LENGTH or math.abs(Vec.z) > MAX_TRACE_LENGTH then
+                Vec.x = math.Clamp(Vec.x, -MAX_TRACE_LENGTH, MAX_TRACE_LENGTH)
+                Vec.y = math.Clamp(Vec.y, -MAX_TRACE_LENGTH, MAX_TRACE_LENGTH)
+                Vec.z = math.Clamp(Vec.z, -MAX_TRACE_LENGTH, MAX_TRACE_LENGTH)
                 print("nan Values")
             end
 
